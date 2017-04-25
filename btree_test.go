@@ -11,6 +11,13 @@ func TestBtree(t *testing.T) {
 
 	btree := New()
 	btree.Insert(1).Insert(2).Insert(3)
+
+	if btree.Size() != 3 {
+		t.Error("size of tree should be 3")
+	}
+	if btree.Get(2) != 2 {
+		t.Error("get value should be 2")
+	}
 	if btree.beginning().Value != 1 {
 		t.Error("beggining of tree should be 1")
 	}

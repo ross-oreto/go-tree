@@ -68,6 +68,36 @@ func (t *Btree) Insert(value interface{}) *Btree {
 	return t.Put(value, value)
 }
 
+func (t *Btree) GetNode(key interface{}) *Node {
+	var node *Node = nil
+	if !t.isEmpty() { node = t.root.get(key) }
+	return node
+}
+
+func (t *Btree) Get(key interface{}) interface{} {
+	var node *Node = t.GetNode(key)
+	if node != nil {
+		return node.Value
+	}
+	return nil
+}
+
+func (t *Btree) Size() int {
+	nodes := 0
+	if !t.isEmpty() {
+		t.count(t.root, &nodes)
+	}
+	return nodes
+}
+
+func (t *Btree) count(node *Node, nodes *int) {
+	if node != nil {
+		t.count(node.left, nodes)
+		*nodes += 1
+		t.count(node.right, nodes)
+	}
+}
+
 func (t *Btree) beginning() *Node {
 	if t.isEmpty() { return nil }
 	return t.root.beginning()
@@ -103,6 +133,19 @@ func (n *Node) Insert(newNode *Node) int {
 	if n.balance < -1 { n.rotateRight() }
 	if n.balance > 1 { n.rotateLeft() }
 	return n.balance
+}
+
+func (n *Node) get(k interface{}) *Node {
+	var node *Node = nil
+	c := Comp(k, n.Key)
+	if c < 0 {
+		if n.hasLeftChild() { node = n.left.get(k) }
+	} else if c > 0 {
+		if n.hasRightChild() { node = n.right.get(k) }
+	} else {
+		node = n
+	}
+	return node
 }
 
 func (n *Node) Next() *Node {
