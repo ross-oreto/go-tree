@@ -59,10 +59,9 @@ func TestIterateBtree(t *testing.T) {
 
 func TestRemoveBtree(t *testing.T) {
 	btree := btree123()
-	btree.Remove(1)
+	btree.Remove(1).Remove(2).Remove(3)
 
-	size := btree.Size()
-	if size != 2 {
-		t.Error(size, "should be size", 2)
+	if !btree.Empty() {
+		t.Error("tree should be empty")
 	}
 }

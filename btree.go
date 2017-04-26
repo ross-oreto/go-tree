@@ -36,7 +36,6 @@ func (n *Node) Init() *Node {
 	n.left = nil
 	n.right = nil
 	n.parent = nil
-	n.nodeType = ROOT
 	return n
 }
 
@@ -53,6 +52,7 @@ func (t *Btree) Empty() bool {
 
 func (t *Btree) Put(key, value interface{}) *Btree {
 	var newNode *Node = (&Node{Key: key, Value: value}).Init()
+	newNode.nodeType = ROOT
 	if t.Empty() {
 		t.Root = newNode
 	} else {
@@ -109,17 +109,17 @@ func (t *Btree) Slice() []interface{} {
 	return slice
 }
 
-func (t *Btree) RemoveNode(node *Node) *Node {
+func (t *Btree) RemoveNode(node *Node) *Btree {
 	if node != nil {
 		var newNode *Node = node.remove()
 		if (newNode != nil && newNode.isRoot()) || node.isRoot() {
 			t.Root = newNode
 		}
 	}
-	return node
+	return t
 }
 
-func (t *Btree) Remove(key interface{}) *Node {
+func (t *Btree) Remove(key interface{}) *Btree {
 	return t.RemoveNode(t.GetNode(key))
 }
 
