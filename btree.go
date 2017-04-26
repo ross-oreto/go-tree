@@ -3,7 +3,7 @@ package tree
 import "math"
 
 type Btree struct {
-	root *Node
+	Root     *Node
 	comparer Comparer
 }
 
@@ -43,22 +43,22 @@ func (n *Node) Init() *Node {
 func New() *Btree { return new(Btree).Init() }
 
 func (t *Btree) Init() *Btree {
-	t.root = nil
+	t.Root = nil
 	return t
 }
 
-func (t *Btree) isEmpty() bool {
-	return t.root == nil
+func (t *Btree) Empty() bool {
+	return t.Root == nil
 }
 
 func (t *Btree) Put(key, value interface{}) *Btree {
 	var newNode *Node = (&Node{Key: key, Value: value}).Init()
-	if t.isEmpty() {
-		t.root = newNode
+	if t.Empty() {
+		t.Root = newNode
 	} else {
-		t.root.Insert(newNode)
-		for t.root.nodeType != ROOT {
-			t.root = t.root.parent
+		t.Root.Insert(newNode)
+		for t.Root.nodeType != ROOT {
+			t.Root = t.Root.parent
 		}
 	}
 	return t
@@ -70,7 +70,7 @@ func (t *Btree) Insert(value interface{}) *Btree {
 
 func (t *Btree) GetNode(key interface{}) *Node {
 	var node *Node = nil
-	if !t.isEmpty() { node = t.root.get(key) }
+	if !t.Empty() { node = t.Root.get(key) }
 	return node
 }
 
@@ -84,10 +84,43 @@ func (t *Btree) Get(key interface{}) interface{} {
 
 func (t *Btree) Size() int {
 	nodes := 0
-	if !t.isEmpty() {
-		t.count(t.root, &nodes)
+	if !t.Empty() {
+		t.count(t.Root, &nodes)
 	}
 	return nodes
+}
+
+func (t *Btree) Head() *Node {
+	if t.Empty() { return nil }
+	return t.Root.beginning()
+}
+
+func (t *Btree) Tail() *Node {
+	if t.Empty() { return nil }
+	return t.Root.end()
+}
+
+func (t *Btree) Slice() []interface{} {
+	size := t.Size()
+	slice := make([]interface{}, size, size)
+	for i, n := 0, t.Head(); n != nil; i, n = i + 1, n.Next() {
+		slice[i] = n.Value
+	}
+	return slice
+}
+
+func (t *Btree) RemoveNode(node *Node) *Node {
+	if node != nil {
+		var newNode *Node = node.remove()
+		if (newNode != nil && newNode.isRoot()) || node.isRoot() {
+			t.Root = newNode
+		}
+	}
+	return node
+}
+
+func (t *Btree) Remove(key interface{}) *Node {
+	return t.RemoveNode(t.GetNode(key))
 }
 
 func (t *Btree) count(node *Node, nodes *int) {
@@ -96,16 +129,6 @@ func (t *Btree) count(node *Node, nodes *int) {
 		*nodes += 1
 		t.count(node.right, nodes)
 	}
-}
-
-func (t *Btree) beginning() *Node {
-	if t.isEmpty() { return nil }
-	return t.root.beginning()
-}
-
-func (t *Btree) end() *Node {
-	if t.isEmpty() { return nil }
-	return t.root.end()
 }
 
 func (n *Node) Insert(newNode *Node) int {
@@ -154,7 +177,7 @@ func (n *Node) Next() *Node {
 		next = n.right.beginning()
 	} else if n.hasParent() {
 		node := n
-		for n.parent != nil {
+		for node.parent != nil {
 			node = n.parent
 			if Comp(node.Value, n.Value) > 0 {
 				next = node
@@ -168,7 +191,7 @@ func (n *Node) Next() *Node {
 func (n *Node) Prev() *Node {
 	var prev *Node = nil
 	if n.hasLeftChild() {
-		prev = prev.end()
+		prev = n.left.end()
 	} else if n.hasParent() {
 		var node *Node = n
 		for node.parent != nil {
@@ -180,6 +203,75 @@ func (n *Node) Prev() *Node {
 		}
 	}
 	return prev
+}
+
+func (n *Node) remove() *Node {
+	var node *Node = n.parent
+	var replace *Node = nil
+	if node == nil {
+		replace = n.Prev()
+		if replace == nil {
+			replace = n.Next()
+		}
+		if replace != nil {
+			var replaceParent *Node = replace.parent
+			replace.attachLeftNode(n.detachLeftNode(), false)
+			replace.attachRightNode(n.detachRightNode(), false)
+			replace.nodeType = ROOT
+			if replace.right == replace { replace.right = nil }
+			if replace.left == replace { replace.left = nil }
+			node = replaceParent
+		}
+	} else if n.hasTwoChildren() {
+		node.detachNode(n.nodeType)
+		replace = n.Prev()
+		var previousParent *Node = replace.parent
+		node.attachNode(previousParent.detachNode(replace.nodeType), n.nodeType)
+		replace.attachLeftNode(n.detachLeftNode(), false)
+		replace.attachRightNode(n.detachRightNode(), false)
+		node = previousParent
+	} else if n.hasNoChildren() {
+		node.detachNode(n.nodeType)
+	} else if n.hasLeftChild() {
+		node.detachNode(n.nodeType)
+		replace = n.detachLeftNode()
+		node.attachNode(replace, n.nodeType)
+	} else {
+		node.detachNode(n.nodeType)
+		replace = n.detachRightNode()
+		node.attachNode(replace, n.nodeType)
+	}
+	n.Init()
+	var newRoot *Node = n.notifyParents(node)
+	if newRoot != nil { replace = newRoot }
+	return replace
+}
+
+func (n *Node) notifyParents(node *Node) *Node {
+	var nodeType NodeType = n.nodeType
+	for node != nil {
+		if nodeType == LEFT {
+			node.balance += 1
+		} else if nodeType == RIGHT { node.balance -= 1 }
+
+		if node.balance < -1 {
+			node = node.rotateRight()
+			if node.nodeType == ROOT {
+				return node
+			}
+		}
+		if node.balance > 1 {
+			node = node.rotateLeft()
+			if node.nodeType == ROOT {
+				return node
+			}
+		}
+		nodeType = node.nodeType
+		if node.balance == 0 {
+			node = node.parent
+		} else { node = nil }
+	}
+	return nil
 }
 
 func Comp(v1, v2 interface{}) int  {
@@ -251,6 +343,17 @@ func (n *Node) detachLeftNode() *Node {
 		node = n.left
 		n.left = nil
 		node.parent = nil
+	}
+	return node
+}
+
+func (n *Node) detachNode(nodeType NodeType) *Node {
+	var node *Node = nil
+	switch nodeType {
+	case LEFT:
+		node = n.detachLeftNode()
+	case RIGHT:
+		node = n.detachRightNode()
 	}
 	return node
 }
