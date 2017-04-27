@@ -43,14 +43,14 @@ func (t *Btree) Init() *Btree {
 }
 
 func (t *Btree) String() string {
-	return fmt.Sprint(t.Slice())
+	return fmt.Sprint(t.Values())
 }
 
 func (t *Btree) Empty() bool {
 	return t.Root == nil
 }
 
-func (t *Btree) Put(key, value interface{}) *Btree {
+func (t *Btree) Put(key interface{}, value interface{}) *Btree {
 	var newNode *Node = (&Node{Key: key, Value: value}).Init()
 	newNode.nodeType = ROOT
 	if t.Empty() {
@@ -64,8 +64,22 @@ func (t *Btree) Put(key, value interface{}) *Btree {
 	return t
 }
 
+func (t *Btree) PutAll(entries map[interface{}]interface{}) *Btree {
+	for k, v := range entries {
+		t.Put(k, v)
+	}
+	return t
+}
+
 func (t *Btree) Insert(value interface{}) *Btree {
 	return t.Put(value, value)
+}
+
+func (t *Btree) InsertAll(values []interface{}) *Btree {
+	for _, v := range values {
+		t.Insert(v)
+	}
+	return t
 }
 
 func (t *Btree) GetNode(key interface{}) *Node {
@@ -100,10 +114,19 @@ func (t *Btree) Tail() *Node {
 	return t.Root.end()
 }
 
-func (t *Btree) Slice() []interface{} {
+func (t *Btree) Keys() []interface{} {
 	size := t.Size()
-	slice := make([]interface{}, size, size)
-	for i, n := 0, t.Head(); n != nil; i, n = i + 1, n.Next() {
+	slice := make([]interface{}, size)
+	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
+		slice[i] = n.Key
+	}
+	return slice
+}
+
+func (t *Btree) Values() []interface{} {
+	size := t.Size()
+	slice := make([]interface{}, size)
+	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
 		slice[i] = n.Value
 	}
 	return slice
@@ -199,8 +222,8 @@ func (n *Node) Next() *Node {
 	} else if n.hasParent() {
 		node := n
 		for node.parent != nil {
-			node = n.parent
-			if Comp(node.Value, n.Value) > 0 {
+			node = node.parent
+			if Comp(node.Key, n.Key) > 0 {
 				next = node
 				break
 			}
@@ -217,7 +240,7 @@ func (n *Node) Prev() *Node {
 		var node *Node = n
 		for node.parent != nil {
 			node = node.parent
-			if Comp(node.Value, n.Value) < 0 {
+			if Comp(node.Key, n.Key) < 0 {
 				prev = node
 				break
 			}

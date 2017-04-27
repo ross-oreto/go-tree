@@ -11,7 +11,7 @@ func btree123() *Btree {
 	return btree
 }
 
-func TestBtree(t *testing.T) {
+func TestBtree1(t *testing.T) {
 	btree := btree123()
 
 	if btree.Size() != 3 {
@@ -26,8 +26,15 @@ func TestBtree(t *testing.T) {
 	if btree.Root.Value != 2 {
 		t.Error("Root of tree should be 2")
 	}
-	if btree.String() != "[1 2 3]" {
-		t.Error("tree string representation should be [1 2 3]")
+}
+
+func TestBtree2(t *testing.T) {
+	btree := btree123().InsertAll([]interface{}{4, 5, 6})
+	btree.PutAll(map[interface{}]interface{}{ 7:"a", 8:"b", 9:"c" })
+	s1 := btree.String()
+	s2 := "[1 2 3 4 5 6 a b c]"
+	if s1 != s2 {
+		t.Error(s1, "tree string representation should equal", s2)
 	}
 }
 
@@ -52,8 +59,8 @@ func TestIterateBtree(t *testing.T) {
 		t.Error(b, "should equal", d)
 	}
 
-	slice := btree.Slice()
-	for i, v := range slice {
+	l := btree.Values()
+	for i, v := range l {
 		if c[i] != v {
 			t.Error(c[i], "should equal", v)
 		}
