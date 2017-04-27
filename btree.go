@@ -1,6 +1,9 @@
 package tree
 
-import "math"
+import (
+	"math"
+	"fmt"
+)
 
 type Btree struct {
 	Root     *Node
@@ -31,19 +34,16 @@ const (
 	RIGHT = 2
 )
 
-func (n *Node) Init() *Node {
-	n.balance = 0
-	n.left = nil
-	n.right = nil
-	n.parent = nil
-	return n
-}
-
 func New() *Btree { return new(Btree).Init() }
 
+// btree methods
 func (t *Btree) Init() *Btree {
 	t.Root = nil
 	return t
+}
+
+func (t *Btree) String() string {
+	return fmt.Sprint(t.Slice())
 }
 
 func (t *Btree) Empty() bool {
@@ -123,12 +123,33 @@ func (t *Btree) Remove(key interface{}) *Btree {
 	return t.RemoveNode(t.GetNode(key))
 }
 
+func (t *Btree) Pop() *Node {
+	var node *Node = t.Tail()
+	t.RemoveNode(node)
+	return node
+}
+
+func (t *Btree) Pull() *Node {
+	var node *Node = t.Head()
+	t.RemoveNode(node)
+	return node
+}
+
 func (t *Btree) count(node *Node, nodes *int) {
 	if node != nil {
 		t.count(node.left, nodes)
 		*nodes += 1
 		t.count(node.right, nodes)
 	}
+}
+
+// Node methods
+func (n *Node) Init() *Node {
+	n.balance = 0
+	n.left = nil
+	n.right = nil
+	n.parent = nil
+	return n
 }
 
 func (n *Node) Insert(newNode *Node) int {

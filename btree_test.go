@@ -26,6 +26,9 @@ func TestBtree(t *testing.T) {
 	if btree.Root.Value != 2 {
 		t.Error("Root of tree should be 2")
 	}
+	if btree.String() != "[1 2 3]" {
+		t.Error("tree string representation should be [1 2 3]")
+	}
 }
 
 func TestIterateBtree(t *testing.T) {
