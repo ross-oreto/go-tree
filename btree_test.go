@@ -3,7 +3,6 @@ package tree
 import (
 	"testing"
 	"reflect"
-	"fmt"
 )
 
 func btree123() *Btree {
@@ -97,35 +96,53 @@ func TestRemoveBtree(t *testing.T) {
 	}
 }
 
-type TestKey struct {
+type TestKey1 struct {
 	Name string
 }
-
-func (testkey TestKey) Comp(val interface{}) int {
+func (testkey TestKey1) Comp(val interface{}) int {
 	var c int = 0
-	tk := val.(TestKey)
-	fmt.Println(tk, testkey)
+	tk := val.(TestKey1)
 	if testkey.Name > tk.Name {
 		c = 1
 	} else if testkey.Name < tk.Name {
 		c = -1
-	} else {
-		c = 0
 	}
-	fmt.Println(c)
 	return c
+}
+type TestKey2 struct {
+	Name string
+}
+func (testkey TestKey2) String() string {
+	return testkey.Name
 }
 
 func TestCustomKeyBtree(t *testing.T) {
 	btree := New()
-	btree.Insert(TestKey{Name: "Ross"})
-	btree.Insert(TestKey{Name: "Michael"})
-	btree.Insert(TestKey{Name: "Angelo"})
-	//btree.Insert(TestKey{Name: "Jason"})
-
-	//rootName := btree.Root.Value.(TestKey).Name
-	//if btree.Root.Value.(TestKey).Name != "Michael" {
+	btree.Insert(1).Insert(2).Insert(3).Insert(4)
+	t.Log(btree.Root.Value, btree.Root.balance)
+	btree.RemoveNode(btree.Root)
+	t.Log(btree.Root.Value, btree.Root.balance, btree.Root.right.right.Value)
+	btree.RemoveNode(btree.Root)
+	t.Log(btree.Root.Value, btree.Root.balance)
+	//btree.InsertAll([]interface{}{TestKey1{Name: "Ross"}, TestKey1{Name: "Michael"},
+	//	TestKey1{Name: "Angelo"}, TestKey1{Name: "Jason"}})
+	//
+	//rootName := btree.Root.Value.(TestKey1).Name
+	//if btree.Root.Value.(TestKey1).Name != "Michael" {
 	//	t.Error(rootName, "should equal Michael")
-	//	t.Log(btree.String())
+	//}
+	//btree.Init()
+	//btree.InsertAll([]interface{}{TestKey2{Name: "Ross"}, TestKey2{Name: "Michael"},
+	//	TestKey2{Name: "Angelo"}, TestKey2{Name: "Jason"}})
+	//
+	//s := btree.String()
+	//test := "[Angelo Jason Michael Ross]"
+	//if s != test {
+	//	t.Error(s, "should equal", test)
+	//}
+	//
+	//btree.Remove(TestKey2{Name: "Michael"})
+	//if btree.Len() != 3 {
+	//	t.Error("tree length should be 3")
 	//}
 }

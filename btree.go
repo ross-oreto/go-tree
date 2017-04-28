@@ -322,8 +322,9 @@ func (n *Node) notifyParents(node *Node) *Node {
 	for node != nil {
 		if nodeType == LEFT {
 			node.balance += 1
-		} else if nodeType == RIGHT { node.balance -= 1 }
-
+		} else if nodeType == RIGHT {
+			node.balance -= 1
+		}
 		if node.balance < -1 {
 			node = node.rotateRight()
 			if node.nodeType == ROOT {
@@ -349,29 +350,43 @@ func Comp(v1, v2 interface{}) int  {
 
 	switch v1.(type) {
 	default:
-		if v1.(int) > v2.(int) { c = 1 } else if v1.(int) < v2.(int) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(string), v2.(string)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case int:
-		if v1.(int) > v2.(int) { c = 1 } else if v1.(int) < v2.(int) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(int), v2.(int)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case uint:
-		if v1.(uint) > v2.(uint) { c = 1 } else if v1.(uint) < v2.(uint) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(uint), v2.(uint)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case float32:
-		if v1.(float32) > v2.(float32) { c = 1 } else if v1.(float32) < v2.(float32) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(float32), v2.(float32)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case float64:
-		if v1.(float64) > v2.(float64) { c = 1 } else if v1.(float64) < v2.(float64) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(float64), v2.(float64)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case uintptr:
-		if v1.(uintptr) > v2.(uintptr) { c = 1 } else if v1.(uintptr) < v2.(uintptr) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(uintptr), v2.(uintptr)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case byte:
-		if v1.(byte) > v2.(byte) { c = 1 } else if v1.(byte) < v2.(byte) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(byte), v2.(byte)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case rune:
-		if v1.(rune) > v2.(rune) { c = 1 } else if v1.(rune) < v2.(rune) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(rune), v2.(rune)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case complex64:
-		if v1.(float64) > v2.(float64) { c = 1 } else if v1.(float64) < v2.(float64) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(float64), v2.(float64)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case complex128:
-		if v1.(float64) > v2.(float64) { c = 1 } else if v1.(float64) < v2.(float64) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(float64), v2.(float64)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case string:
-		if v1.(string) > v2.(string) { c = 1 } else if v1.(string) < v2.(string) { c = -1 } else { c = 0 }
+		t1, t2 := v1.(string), v2.(string)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case Comparer:
 		c = v1.(Comparer).Comp(v2)
+	case fmt.Stringer:
+		s1, s2 := v1.(fmt.Stringer).String(), v2.(fmt.Stringer).String()
+		if s1 > s2 { c = 1 } else if s1 < s2 { c = -1 } else { c = 0 }
 	}
 	return c
 }
@@ -398,23 +413,23 @@ func (n *Node) attachRightNode(node *Node, addWeight bool) *Node {
 }
 
 func (n *Node) detachRightNode() *Node {
-	var node *Node = nil
 	if n.hasRightChild() {
-		node = n.right
+		node := n.right
 		n.right = nil
 		node.parent = nil
+		return node
 	}
-	return node
+	return nil
 }
 
 func (n *Node) detachLeftNode() *Node {
-	var node *Node = nil
 	if n.hasLeftChild() {
-		node = n.left
+		node := n.left
 		n.left = nil
 		node.parent = nil
+		return node
 	}
-	return node
+	return nil
 }
 
 func (n *Node) detachNode(nodeType NodeType) *Node {
@@ -469,7 +484,7 @@ func (n *Node) rotateRight() *Node {
 		node = node.rotateLeft()
 	}
 	if n.isRoot() {
-		n.nodeType = ROOT
+		node.nodeType = ROOT
 	} else if n.hasParent() {
 		n.parent.attachNode(node, n.nodeType)
 	}
@@ -477,7 +492,7 @@ func (n *Node) rotateRight() *Node {
 		n.attachLeftNode(node.detachRightNode(), true)
 	}
 	node.attachRightNode(n, true)
-	if math.Abs(float64(n.balance)) < 2 { node.balance = node.balance * -1 }
+	if math.Abs(float64(n.balance)) < 2 { node.balance = n.balance * -1 }
 	n.setBalance()
 	return node
 }
