@@ -3,6 +3,7 @@ package tree
 import (
 	"testing"
 	"reflect"
+	"fmt"
 )
 
 func btree123() *Btree {
@@ -14,7 +15,7 @@ func btree123() *Btree {
 func TestBtree1(t *testing.T) {
 	btree := btree123()
 
-	if btree.Size() != 3 {
+	if btree.Len() != 3 {
 		t.Error("size of tree should be 3")
 	}
 	if btree.Get(2) != 2 {
@@ -35,6 +36,11 @@ func TestBtree2(t *testing.T) {
 	s2 := "[1 2 3 4 5 6 a b c]"
 	if s1 != s2 {
 		t.Error(s1, "tree string representation should equal", s2)
+	}
+	testMap := map[interface{}]interface{}{ 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:"a", 8:"b", 9:"c" }
+	btreeMap := btree.Map()
+	if !reflect.DeepEqual(btreeMap , testMap) {
+		t.Error(btreeMap, "should equal", testMap)
 	}
 }
 
@@ -69,9 +75,57 @@ func TestIterateBtree(t *testing.T) {
 
 func TestRemoveBtree(t *testing.T) {
 	btree := btree123()
+	test := []interface{}{1, 2, 3}
+	if !btree.ContainsAll(test) {
+		t.Error("tree should contain all of", test)
+	}
+	if !btree.ContainsAny(test) {
+		t.Error("tree should contain one of", test)
+	}
+
 	btree.Remove(1).Remove(2).Remove(3)
 
 	if !btree.Empty() {
 		t.Error("tree should be empty")
 	}
+	if btree.ContainsAny(test) {
+		t.Error("tree should not contain any of", test)
+	}
+	btree.Init()
+	if btree.Contains(1) ||  btree.GetNode(1) != nil {
+		t.Error("tree should be empty")
+	}
+}
+
+type TestKey struct {
+	Name string
+}
+
+func (testkey TestKey) Comp(val interface{}) int {
+	var c int = 0
+	tk := val.(TestKey)
+	fmt.Println(tk, testkey)
+	if testkey.Name > tk.Name {
+		c = 1
+	} else if testkey.Name < tk.Name {
+		c = -1
+	} else {
+		c = 0
+	}
+	fmt.Println(c)
+	return c
+}
+
+func TestCustomKeyBtree(t *testing.T) {
+	btree := New()
+	btree.Insert(TestKey{Name: "Ross"})
+	btree.Insert(TestKey{Name: "Michael"})
+	btree.Insert(TestKey{Name: "Angelo"})
+	//btree.Insert(TestKey{Name: "Jason"})
+
+	//rootName := btree.Root.Value.(TestKey).Name
+	//if btree.Root.Value.(TestKey).Name != "Michael" {
+	//	t.Error(rootName, "should equal Michael")
+	//	t.Log(btree.String())
+	//}
 }

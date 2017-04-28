@@ -7,7 +7,6 @@ import (
 
 type Btree struct {
 	Root     *Node
-	comparer Comparer
 }
 
 type Traverser interface {
@@ -16,7 +15,7 @@ type Traverser interface {
 }
 
 type Comparer interface {
-	Comp(v1, v2 interface{}) int
+	Comp(val interface{}) int
 }
 
 type Node struct {
@@ -82,6 +81,24 @@ func (t *Btree) InsertAll(values []interface{}) *Btree {
 	return t
 }
 
+func (t *Btree) Contains(key interface{}) bool {
+	return t.Get(key) != nil
+}
+
+func (t *Btree) ContainsAny(keys []interface{}) bool {
+	for _, k := range keys {
+		if t.Contains(k) { return true }
+	}
+	return false
+}
+
+func (t *Btree) ContainsAll(keys []interface{}) bool {
+	for _, k := range keys {
+		if !t.Contains(k) { return false }
+	}
+	return true
+}
+
 func (t *Btree) GetNode(key interface{}) *Node {
 	var node *Node = nil
 	if !t.Empty() { node = t.Root.get(key) }
@@ -96,7 +113,7 @@ func (t *Btree) Get(key interface{}) interface{} {
 	return nil
 }
 
-func (t *Btree) Size() int {
+func (t *Btree) Len() int {
 	nodes := 0
 	if !t.Empty() {
 		t.count(t.Root, &nodes)
@@ -115,7 +132,7 @@ func (t *Btree) Tail() *Node {
 }
 
 func (t *Btree) Keys() []interface{} {
-	size := t.Size()
+	size := t.Len()
 	slice := make([]interface{}, size)
 	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
 		slice[i] = n.Key
@@ -124,12 +141,21 @@ func (t *Btree) Keys() []interface{} {
 }
 
 func (t *Btree) Values() []interface{} {
-	size := t.Size()
+	size := t.Len()
 	slice := make([]interface{}, size)
 	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
 		slice[i] = n.Value
 	}
 	return slice
+}
+
+func (t *Btree) Map() map[interface{}]interface{} {
+	size := t.Len()
+	btreeMap := make(map[interface{}]interface{}, size)
+	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
+		btreeMap[n.Key] = n.Value
+	}
+	return btreeMap
 }
 
 func (t *Btree) RemoveNode(node *Node) *Btree {
@@ -345,7 +371,7 @@ func Comp(v1, v2 interface{}) int  {
 	case string:
 		if v1.(string) > v2.(string) { c = 1 } else if v1.(string) < v2.(string) { c = -1 } else { c = 0 }
 	case Comparer:
-		c = v1.(Comparer).Comp(v1, v2)
+		c = v1.(Comparer).Comp(v2)
 	}
 	return c
 }
