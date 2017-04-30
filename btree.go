@@ -33,6 +33,19 @@ const (
 	RIGHT = 2
 )
 
+func (nodeType NodeType) String() string {
+	var s string = ""
+	switch nodeType {
+	case ROOT:
+		s = "root node"
+	case LEFT:
+		s = "left node"
+	case RIGHT:
+		s = "right node"
+	}
+	return s
+}
+
 func New() *Btree { return new(Btree).Init() }
 
 // btree methods
@@ -43,6 +56,18 @@ func (t *Btree) Init() *Btree {
 
 func (t *Btree) String() string {
 	return fmt.Sprint(t.Values())
+}
+
+func (t *Btree) Debug() {
+	fmt.Println("----------------------------------------------------------------------------------------------")
+	if t.Empty() {
+		fmt.Println("tree is empty")
+	} else { fmt.Println(t.Len(), "elements") }
+	for i, n := 1, t.Head(); n != nil; i, n = i + 1, n.Next() {
+		fmt.Print(i, "-")
+		n.Debug()
+	}
+	fmt.Println("----------------------------------------------------------------------------------------------")
 }
 
 func (t *Btree) Empty() bool {
@@ -201,6 +226,27 @@ func (n *Node) Init() *Node {
 	return n
 }
 
+func (n *Node) String() string {
+	return fmt.Sprint("[", n.Key, ":", n.Value, "]")
+}
+
+func (n *Node) Debug() {
+	var children string = ""
+	if n.hasNoChildren() {
+		children = "no children |"
+	} else if n.hasTwoChildren() {
+		children = fmt.Sprint("left child:", n.left.String(), " right child:", n.right.String())
+	} else if n.hasRightChild() {
+		children = fmt.Sprint("right child:", n.right.String())
+	} else {
+		children = fmt.Sprint("left child:", n.left.String())
+	}
+	var parent string = ""
+	if !n.isRoot() { parent =  fmt.Sprint("parent:", n.parent.String())}
+
+	fmt.Println(n.String(), n.nodeType.String(), "|", "weight", n.balance, "|", children, parent)
+}
+
 func (n *Node) Insert(newNode *Node) int {
 	c := Comp(newNode.Key, n.Key)
 	if c < 0 {
@@ -276,23 +322,25 @@ func (n *Node) Prev() *Node {
 }
 
 func (n *Node) remove() *Node {
-	var node *Node = n.parent
 	var replace *Node = nil
-	if node == nil {
-		replace = n.Prev()
-		if replace == nil {
-			replace = n.Next()
+	if n.isRoot() {
+		leaf := removeRoot(n)
+		if leaf != nil {
+			replace = removeLeaf(leaf)
+			leaf.Init()
+			if replace == nil { return n }
 		}
-		if replace != nil {
-			var replaceParent *Node = replace.parent
-			replace.attachLeftNode(n.detachLeftNode(), false)
-			replace.attachRightNode(n.detachRightNode(), false)
-			replace.nodeType = ROOT
-			if replace.right == replace { replace.right = nil }
-			if replace.left == replace { replace.left = nil }
-			node = replaceParent
-		}
-	} else if n.hasTwoChildren() {
+	} else {
+		replace = removeLeaf(n)
+		n.Init()
+	}
+	return replace
+}
+
+func removeLeaf(n *Node) *Node {
+	var replace *Node = nil
+	var node *Node = n.parent
+	if n.hasTwoChildren() {
 		node.detachNode(n.nodeType)
 		replace = n.Prev()
 		var previousParent *Node = replace.parent
@@ -311,9 +359,18 @@ func (n *Node) remove() *Node {
 		replace = n.detachRightNode()
 		node.attachNode(replace, n.nodeType)
 	}
-	n.Init()
 	var newRoot *Node = n.notifyParents(node)
 	if newRoot != nil { replace = newRoot }
+	return replace
+}
+
+func removeRoot(root *Node) *Node {
+	var replace *Node = root.Prev()
+	if replace == nil { replace = root.Next() }
+	if replace != nil {
+		root.Key, replace.Key = replace.Key, root.Key
+		root.Value, replace.Value = replace.Value, root.Value
+	}
 	return replace
 }
 
@@ -393,8 +450,10 @@ func Comp(v1, v2 interface{}) int  {
 
 // non-exported methods
 func (n *Node) attachLeftNode(node *Node, addWeight bool) *Node {
-	n.left = node
-	if node != nil {
+	if node == nil { n.left = node; return nil }
+	c := Comp(n.Key, node.Key)
+	if c != 0 {
+		n.left = node
 		node.nodeType = LEFT
 		node.parent = n
 		if addWeight { n.balance -= 1 }
@@ -403,8 +462,10 @@ func (n *Node) attachLeftNode(node *Node, addWeight bool) *Node {
 }
 
 func (n *Node) attachRightNode(node *Node, addWeight bool) *Node {
-	n.right = node
-	if node != nil {
+	if node == nil { n.right = node; return nil }
+	c := Comp(n.Key, node.Key)
+	if c != 0 {
+		n.right = node
 		node.nodeType = RIGHT
 		node.parent = n
 		if addWeight { n.balance += 1 }

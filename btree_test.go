@@ -94,6 +94,19 @@ func TestRemoveBtree(t *testing.T) {
 	if btree.Contains(1) ||  btree.GetNode(1) != nil {
 		t.Error("tree should be empty")
 	}
+
+	btree = btree123()
+	pop := btree.Pop()
+	if pop.Key != 3 {
+		t.Error(pop.Key, "should be 3")
+	}
+	pull := btree.Pull()
+	if pull.Key != 1 {
+		t.Error(pop.Key, "should be 3")
+	}
+	if !btree.RemoveNode(btree.Pop()).Empty() {
+		t.Error("tree should be empty")
+	}
 }
 
 type TestKey1 struct {
@@ -118,31 +131,33 @@ func (testkey TestKey2) String() string {
 
 func TestCustomKeyBtree(t *testing.T) {
 	btree := New()
-	btree.Insert(1).Insert(2).Insert(3).Insert(4)
-	t.Log(btree.Root.Value, btree.Root.balance)
-	btree.RemoveNode(btree.Root)
-	t.Log(btree.Root.Value, btree.Root.balance, btree.Root.right.right.Value)
-	btree.RemoveNode(btree.Root)
-	t.Log(btree.Root.Value, btree.Root.balance)
-	//btree.InsertAll([]interface{}{TestKey1{Name: "Ross"}, TestKey1{Name: "Michael"},
-	//	TestKey1{Name: "Angelo"}, TestKey1{Name: "Jason"}})
-	//
-	//rootName := btree.Root.Value.(TestKey1).Name
-	//if btree.Root.Value.(TestKey1).Name != "Michael" {
-	//	t.Error(rootName, "should equal Michael")
-	//}
-	//btree.Init()
-	//btree.InsertAll([]interface{}{TestKey2{Name: "Ross"}, TestKey2{Name: "Michael"},
-	//	TestKey2{Name: "Angelo"}, TestKey2{Name: "Jason"}})
-	//
-	//s := btree.String()
-	//test := "[Angelo Jason Michael Ross]"
-	//if s != test {
-	//	t.Error(s, "should equal", test)
-	//}
-	//
-	//btree.Remove(TestKey2{Name: "Michael"})
-	//if btree.Len() != 3 {
-	//	t.Error("tree length should be 3")
-	//}
+	btree.InsertAll([]interface{}{TestKey1{Name: "Ross"}, TestKey1{Name: "Michael"},
+		TestKey1{Name: "Angelo"}, TestKey1{Name: "Jason"}})
+
+	rootName := btree.Root.Value.(TestKey1).Name
+	if btree.Root.Value.(TestKey1).Name != "Michael" {
+		t.Error(rootName, "should equal Michael")
+	}
+	btree.Init()
+	btree.InsertAll([]interface{}{TestKey2{Name: "Ross"}, TestKey2{Name: "Michael"},
+		TestKey2{Name: "Angelo"}, TestKey2{Name: "Jason"}})
+	btree.Debug()
+	s := btree.String()
+	test := "[Angelo Jason Michael Ross]"
+	if s != test {
+		t.Error(s, "should equal", test)
+	}
+
+	btree.Remove(TestKey2{Name: "Michael"})
+	if btree.Len() != 3 {
+		t.Error("tree length should be 3")
+	}
+	test = "Jason"
+	if btree.Root.Key.(TestKey2).Name != test {
+		t.Error(btree.Root.Key, "root of the tree should be", test)
+	}
+	for !btree.Empty() {
+		btree.RemoveNode(btree.Root)
+	}
+	btree.Debug()
 }
