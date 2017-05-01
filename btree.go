@@ -80,7 +80,7 @@ func (t *Btree) Put(key interface{}, value interface{}) *Btree {
 	if t.Empty() {
 		t.Root = newNode
 	} else {
-		t.Root.Insert(newNode)
+		t.Root.insert(newNode)
 		for t.Root.nodeType != ROOT {
 			t.Root = t.Root.parent
 		}
@@ -197,6 +197,13 @@ func (t *Btree) Remove(key interface{}) *Btree {
 	return t.RemoveNode(t.GetNode(key))
 }
 
+func (t *Btree) RemoveAll(keys []interface{}) *Btree {
+	for _, k := range keys {
+		t.Remove(k)
+	}
+	return t
+}
+
 func (t *Btree) Pop() *Node {
 	var node *Node = t.Tail()
 	t.RemoveNode(node)
@@ -247,13 +254,13 @@ func (n *Node) Debug() {
 	fmt.Println(n.String(), n.nodeType.String(), "|", "weight", n.balance, "|", children, parent)
 }
 
-func (n *Node) Insert(newNode *Node) int {
+func (n *Node) insert(newNode *Node) int {
 	c := Comp(newNode.Key, n.Key)
 	if c < 0 {
 		if n.left == nil {
 			n.attachLeftNode(newNode, true)
 		} else {
-			weight := int(math.Abs(float64(n.left.Insert(newNode))))
+			weight := int(math.Abs(float64(n.left.insert(newNode))))
 			if weight == 0 { return weight }
 			n.balance = n.balance - weight
 		}
@@ -261,7 +268,7 @@ func (n *Node) Insert(newNode *Node) int {
 		if n.right == nil {
 			n.attachRightNode(newNode, true)
 		} else {
-			weight := int(math.Abs(float64(n.right.Insert(newNode))))
+			weight := int(math.Abs(float64(n.right.insert(newNode))))
 			if weight == 0 { return weight }
 			n.balance = n.balance + weight
 		}
@@ -451,8 +458,7 @@ func Comp(v1, v2 interface{}) int  {
 // non-exported methods
 func (n *Node) attachLeftNode(node *Node, addWeight bool) *Node {
 	if node == nil { n.left = node; return nil }
-	c := Comp(n.Key, node.Key)
-	if c != 0 {
+	if n != node {
 		n.left = node
 		node.nodeType = LEFT
 		node.parent = n
@@ -463,8 +469,7 @@ func (n *Node) attachLeftNode(node *Node, addWeight bool) *Node {
 
 func (n *Node) attachRightNode(node *Node, addWeight bool) *Node {
 	if node == nil { n.right = node; return nil }
-	c := Comp(n.Key, node.Key)
-	if c != 0 {
+	if n != node {
 		n.right = node
 		node.nodeType = RIGHT
 		node.parent = n

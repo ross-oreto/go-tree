@@ -3,6 +3,9 @@ package tree
 import (
 	"testing"
 	"reflect"
+	gtree "github.com/google/btree"
+	"flag"
+	"math/rand"
 )
 
 func btree123() *Btree {
@@ -82,7 +85,7 @@ func TestRemoveBtree(t *testing.T) {
 		t.Error("tree should contain one of", test)
 	}
 
-	btree.Remove(1).Remove(2).Remove(3)
+	btree.RemoveAll(test)
 
 	if !btree.Empty() {
 		t.Error("tree should be empty")
@@ -161,3 +164,94 @@ func TestCustomKeyBtree(t *testing.T) {
 	}
 	btree.Debug()
 }
+
+func TestCustomDuplicatesBtree(t *testing.T) {
+	btree := New()
+	btree.InsertAll([]interface{}{0, 2, 5, 10, 15, 20, 12, 14, 13, 25, 0, 2, 5, 10, 15, 20, 12, 14, 13, 25})
+	test := 10
+	if btree.Len() != 10 {
+		t.Error("tree length should be", test)
+	}
+}
+
+// benchmark tests comparing google btree
+const benchLen = 500000
+var btreeDegree = flag.Int("degree", 32, "B-Tree degree")
+// perm returns a random permutation of n Int items in the range [0, n).
+func perm(n int) (out []gtree.Item) {
+	for _, v := range rand.Perm(n) {
+		out = append(out, gtree.Int(v))
+	}
+	return
+}
+
+var bt *Btree
+var gt *gtree.BTree
+var btPerm []int
+var gtPerm []gtree.Item
+
+func BenchmarkInsertBtree(b *testing.B)  {
+	btree := New()
+	for i := 0; i < benchLen; i++ {
+		btree.Insert(i)
+	}
+}
+
+func BenchmarkInsertGtree(b *testing.B)  {
+	btree := gtree.New(*btreeDegree)
+	for i := gtree.Int(0); i < benchLen; i++ {
+		btree.ReplaceOrInsert(i)
+	}
+}
+
+func BenchmarkInsertRandomBtree(b *testing.B)  {
+	bt = New()
+	btPerm = rand.Perm(benchLen)
+	for _, v := range btPerm {
+		bt.Insert(v)
+	}
+}
+
+func BenchmarkInsertRandomGtree(b *testing.B)  {
+	gt = gtree.New(*btreeDegree)
+	gtPerm = perm(benchLen)
+	for _, v := range gtPerm {
+		gt.ReplaceOrInsert(v)
+	}
+}
+
+func BenchmarkGetBtree(b *testing.B)  {
+	for _, v := range btPerm {
+		bt.Get(v)
+	}
+}
+
+func BenchmarkGetGtree(b *testing.B)  {
+	for _, v := range gtPerm {
+		gt.Get(v)
+	}
+}
+
+func BenchmarkIterationBtree(b *testing.B)  {
+	for n := bt.Head(); n != nil; n = n.Next() {}
+}
+
+func BenchmarkIterationGtree(b *testing.B)  {
+	gt.Ascend(func(a gtree.Item) bool {
+		return true
+	})
+}
+
+
+func BenchmarkDeleteBtree(b *testing.B)  {
+	for _, v := range btPerm {
+		bt.Remove(v)
+	}
+}
+
+func BenchmarkDeleteGtree(b *testing.B)  {
+	for _, v := range gtPerm {
+		gt.Delete(v)
+	}
+}
+
