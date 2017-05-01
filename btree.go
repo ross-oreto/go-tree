@@ -1,17 +1,11 @@
 package tree
 
 import (
-	"math"
 	"fmt"
 )
 
 type Btree struct {
-	Root     *Node
-}
-
-type Traverser interface {
-	Next() *Node
-	Previous() *Node
+	root *Node
 }
 
 type Comparer interface {
@@ -19,38 +13,16 @@ type Comparer interface {
 }
 
 type Node struct {
-	Key, Value interface{}
-	left, right, parent *Node
+	Value interface{}
+	left, right *Node
 	balance int
-	nodeType NodeType
-	traverser Traverser
-}
-
-type NodeType uint8
-const (
-	ROOT NodeType = 0
-	LEFT = 1
-	RIGHT = 2
-)
-
-func (nodeType NodeType) String() string {
-	var s string = ""
-	switch nodeType {
-	case ROOT:
-		s = "root node"
-	case LEFT:
-		s = "left node"
-	case RIGHT:
-		s = "right node"
-	}
-	return s
 }
 
 func New() *Btree { return new(Btree).Init() }
 
 // btree methods
 func (t *Btree) Init() *Btree {
-	t.Root = nil
+	t.root = nil
 	return t
 }
 
@@ -58,45 +30,18 @@ func (t *Btree) String() string {
 	return fmt.Sprint(t.Values())
 }
 
-func (t *Btree) Debug() {
-	fmt.Println("----------------------------------------------------------------------------------------------")
-	if t.Empty() {
-		fmt.Println("tree is empty")
-	} else { fmt.Println(t.Len(), "elements") }
-	for i, n := 1, t.Head(); n != nil; i, n = i + 1, n.Next() {
-		fmt.Print(i, "-")
-		n.Debug()
-	}
-	fmt.Println("----------------------------------------------------------------------------------------------")
-}
-
 func (t *Btree) Empty() bool {
-	return t.Root == nil
-}
-
-func (t *Btree) Put(key interface{}, value interface{}) *Btree {
-	var newNode *Node = (&Node{Key: key, Value: value}).Init()
-	newNode.nodeType = ROOT
-	if t.Empty() {
-		t.Root = newNode
-	} else {
-		t.Root.insert(newNode)
-		for t.Root.nodeType != ROOT {
-			t.Root = t.Root.parent
-		}
-	}
-	return t
-}
-
-func (t *Btree) PutAll(entries map[interface{}]interface{}) *Btree {
-	for k, v := range entries {
-		t.Put(k, v)
-	}
-	return t
+	return t.root == nil
 }
 
 func (t *Btree) Insert(value interface{}) *Btree {
-	return t.Put(value, value)
+	var newNode *Node = (&Node{Value: value}).Init()
+	if t.Empty() {
+		t.root = newNode
+	} else {
+		t.root.insert(newNode)
+	}
+	return t
 }
 
 func (t *Btree) InsertAll(values []interface{}) *Btree {
@@ -106,32 +51,29 @@ func (t *Btree) InsertAll(values []interface{}) *Btree {
 	return t
 }
 
-func (t *Btree) Contains(key interface{}) bool {
-	return t.Get(key) != nil
+func (t *Btree) Contains(value interface{}) bool {
+	return t.Get(value) != nil
 }
 
-func (t *Btree) ContainsAny(keys []interface{}) bool {
-	for _, k := range keys {
-		if t.Contains(k) { return true }
+func (t *Btree) ContainsAny(values []interface{}) bool {
+	for _, v := range values {
+		if t.Contains(v) { return true }
 	}
 	return false
 }
 
-func (t *Btree) ContainsAll(keys []interface{}) bool {
-	for _, k := range keys {
-		if !t.Contains(k) { return false }
+func (t *Btree) ContainsAll(values []interface{}) bool {
+	for _, v := range values {
+		if !t.Contains(v) { return false }
 	}
 	return true
 }
 
-func (t *Btree) GetNode(key interface{}) *Node {
+func (t *Btree) Get(value interface{}) interface{} {
 	var node *Node = nil
-	if !t.Empty() { node = t.Root.get(key) }
-	return node
-}
-
-func (t *Btree) Get(key interface{}) interface{} {
-	var node *Node = t.GetNode(key)
+	if t.root != nil {
+		node = t.root.get(value)
+	}
 	if node != nil {
 		return node.Value
 	}
@@ -141,79 +83,94 @@ func (t *Btree) Get(key interface{}) interface{} {
 func (t *Btree) Len() int {
 	nodes := 0
 	if !t.Empty() {
-		t.count(t.Root, &nodes)
+		t.count(t.root, &nodes)
 	}
 	return nodes
 }
 
 func (t *Btree) Head() *Node {
-	if t.Empty() { return nil }
-	return t.Root.beginning()
+	var beginning *Node = t.root
+	for beginning.left != nil {
+		beginning = beginning.left
+	}
+	if beginning == nil {
+		for beginning.right != nil {
+			beginning = beginning.right
+		}
+	}
+	return beginning
 }
 
 func (t *Btree) Tail() *Node {
-	if t.Empty() { return nil }
-	return t.Root.end()
-}
-
-func (t *Btree) Keys() []interface{} {
-	size := t.Len()
-	slice := make([]interface{}, size)
-	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
-		slice[i] = n.Key
+	var beginning *Node = t.root
+	for beginning.right != nil {
+		beginning = beginning.right
 	}
-	return slice
+	if beginning == nil {
+		for beginning.left != nil {
+			beginning = beginning.left
+		}
+	}
+	return beginning
 }
 
 func (t *Btree) Values() []interface{} {
 	size := t.Len()
 	slice := make([]interface{}, size)
-	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
+	t.Ascend(func(n *Node, i int) bool {
 		slice[i] = n.Value
-	}
+		return true
+	})
 	return slice
 }
 
-func (t *Btree) Map() map[interface{}]interface{} {
-	size := t.Len()
-	btreeMap := make(map[interface{}]interface{}, size)
-	for i, n := 0, t.Head(); i < size && n != nil; i, n = i + 1, n.Next() {
-		btreeMap[n.Key] = n.Value
-	}
-	return btreeMap
+func (t *Btree) Delete(value interface{}) *Btree {
+	t.root.get(value).deleteNode()
+	return t
 }
 
-func (t *Btree) RemoveNode(node *Node) *Btree {
-	if node != nil {
-		var newNode *Node = node.remove()
-		if (newNode != nil && newNode.isRoot()) || node.isRoot() {
-			t.Root = newNode
-		}
+func (t *Btree) DeleteAll(values []interface{}) *Btree {
+	for _, k := range values {
+		t.Delete(k)
 	}
 	return t
 }
 
-func (t *Btree) Remove(key interface{}) *Btree {
-	return t.RemoveNode(t.GetNode(key))
-}
-
-func (t *Btree) RemoveAll(keys []interface{}) *Btree {
-	for _, k := range keys {
-		t.Remove(k)
-	}
-	return t
-}
-
-func (t *Btree) Pop() *Node {
+func (t *Btree) Pop() interface{} {
 	var node *Node = t.Tail()
-	t.RemoveNode(node)
-	return node
+
+	return node.Value
 }
 
-func (t *Btree) Pull() *Node {
+func (t *Btree) Pull()  interface{} {
 	var node *Node = t.Head()
-	t.RemoveNode(node)
-	return node
+
+	return node.Value
+}
+
+type NodeIterator func(n *Node, i int) bool
+
+func (t *Btree) Ascend(iterator NodeIterator) {
+	var i int = 0
+	t.root.iterate(iterator, &i, true)
+}
+
+func (t *Btree) Descend(iterator NodeIterator) {
+	var i int = 0
+	t.root.r_iterate(iterator, &i, true)
+}
+
+func (t *Btree) Debug() {
+	fmt.Println("----------------------------------------------------------------------------------------------")
+	if t.Empty() {
+		fmt.Println("tree is empty")
+	} else { fmt.Println(t.Len(), "elements") }
+	t.Ascend(func(n *Node, i int) bool {
+		fmt.Print(i, "-")
+		n.Debug()
+		return true
+	})
+	fmt.Println("----------------------------------------------------------------------------------------------")
 }
 
 func (t *Btree) count(node *Node, nodes *int) {
@@ -224,189 +181,30 @@ func (t *Btree) count(node *Node, nodes *int) {
 	}
 }
 
-// Node methods
 func (n *Node) Init() *Node {
 	n.balance = 0
 	n.left = nil
 	n.right = nil
-	n.parent = nil
 	return n
 }
 
 func (n *Node) String() string {
-	return fmt.Sprint("[", n.Key, ":", n.Value, "]")
+	return fmt.Sprint(n.Value)
 }
 
 func (n *Node) Debug() {
 	var children string = ""
-	if n.hasNoChildren() {
+	if n.left == nil && n.right == nil {
 		children = "no children |"
-	} else if n.hasTwoChildren() {
+	} else if n.left != nil && n.right != nil {
 		children = fmt.Sprint("left child:", n.left.String(), " right child:", n.right.String())
-	} else if n.hasRightChild() {
+	} else if n.right != nil {
 		children = fmt.Sprint("right child:", n.right.String())
 	} else {
 		children = fmt.Sprint("left child:", n.left.String())
 	}
-	var parent string = ""
-	if !n.isRoot() { parent =  fmt.Sprint("parent:", n.parent.String())}
 
-	fmt.Println(n.String(), n.nodeType.String(), "|", "weight", n.balance, "|", children, parent)
-}
-
-func (n *Node) insert(newNode *Node) int {
-	c := Comp(newNode.Key, n.Key)
-	if c < 0 {
-		if n.left == nil {
-			n.attachLeftNode(newNode, true)
-		} else {
-			weight := int(math.Abs(float64(n.left.insert(newNode))))
-			if weight == 0 { return weight }
-			n.balance = n.balance - weight
-		}
-	} else if c > 0 {
-		if n.right == nil {
-			n.attachRightNode(newNode, true)
-		} else {
-			weight := int(math.Abs(float64(n.right.insert(newNode))))
-			if weight == 0 { return weight }
-			n.balance = n.balance + weight
-		}
-	} else {
-		n.replace(newNode)
-		return 0
-	}
-	if n.balance < -1 { n.rotateRight() }
-	if n.balance > 1 { n.rotateLeft() }
-	return n.balance
-}
-
-func (n *Node) get(k interface{}) *Node {
-	var node *Node = nil
-	c := Comp(k, n.Key)
-	if c < 0 {
-		if n.hasLeftChild() { node = n.left.get(k) }
-	} else if c > 0 {
-		if n.hasRightChild() { node = n.right.get(k) }
-	} else {
-		node = n
-	}
-	return node
-}
-
-func (n *Node) Next() *Node {
-	var next *Node = nil
-	if n.hasRightChild() {
-		next = n.right.beginning()
-	} else if n.hasParent() {
-		node := n
-		for node.parent != nil {
-			node = node.parent
-			if Comp(node.Key, n.Key) > 0 {
-				next = node
-				break
-			}
-		}
-	}
-	return next
-}
-
-func (n *Node) Prev() *Node {
-	var prev *Node = nil
-	if n.hasLeftChild() {
-		prev = n.left.end()
-	} else if n.hasParent() {
-		var node *Node = n
-		for node.parent != nil {
-			node = node.parent
-			if Comp(node.Key, n.Key) < 0 {
-				prev = node
-				break
-			}
-		}
-	}
-	return prev
-}
-
-func (n *Node) remove() *Node {
-	var replace *Node = nil
-	if n.isRoot() {
-		leaf := removeRoot(n)
-		if leaf != nil {
-			replace = removeLeaf(leaf)
-			leaf.Init()
-			if replace == nil { return n }
-		}
-	} else {
-		replace = removeLeaf(n)
-		n.Init()
-	}
-	return replace
-}
-
-func removeLeaf(n *Node) *Node {
-	var replace *Node = nil
-	var node *Node = n.parent
-	if n.hasTwoChildren() {
-		node.detachNode(n.nodeType)
-		replace = n.Prev()
-		var previousParent *Node = replace.parent
-		node.attachNode(previousParent.detachNode(replace.nodeType), n.nodeType)
-		replace.attachLeftNode(n.detachLeftNode(), false)
-		replace.attachRightNode(n.detachRightNode(), false)
-		node = previousParent
-	} else if n.hasNoChildren() {
-		node.detachNode(n.nodeType)
-	} else if n.hasLeftChild() {
-		node.detachNode(n.nodeType)
-		replace = n.detachLeftNode()
-		node.attachNode(replace, n.nodeType)
-	} else {
-		node.detachNode(n.nodeType)
-		replace = n.detachRightNode()
-		node.attachNode(replace, n.nodeType)
-	}
-	var newRoot *Node = n.notifyParents(node)
-	if newRoot != nil { replace = newRoot }
-	return replace
-}
-
-func removeRoot(root *Node) *Node {
-	var replace *Node = root.Prev()
-	if replace == nil { replace = root.Next() }
-	if replace != nil {
-		root.Key, replace.Key = replace.Key, root.Key
-		root.Value, replace.Value = replace.Value, root.Value
-	}
-	return replace
-}
-
-func (n *Node) notifyParents(node *Node) *Node {
-	var nodeType NodeType = n.nodeType
-	for node != nil {
-		if nodeType == LEFT {
-			node.balance += 1
-		} else if nodeType == RIGHT {
-			node.balance -= 1
-		}
-		if node.balance < -1 {
-			node = node.rotateRight()
-			if node.nodeType == ROOT {
-				return node
-			}
-		}
-		if node.balance > 1 {
-			node = node.rotateLeft()
-			if node.nodeType == ROOT {
-				return node
-			}
-		}
-		nodeType = node.nodeType
-		if node.balance == 0 {
-			node = node.parent
-		} else { node = nil }
-	}
-	return nil
+	fmt.Println(n.String(), "|", "weight", n.balance, "|", children)
 }
 
 func Comp(v1, v2 interface{}) int  {
@@ -455,166 +253,52 @@ func Comp(v1, v2 interface{}) int  {
 	return c
 }
 
-// non-exported methods
-func (n *Node) attachLeftNode(node *Node, addWeight bool) *Node {
-	if node == nil { n.left = node; return nil }
-	if n != node {
-		n.left = node
-		node.nodeType = LEFT
-		node.parent = n
-		if addWeight { n.balance -= 1 }
-	}
-	return n
+func (n *Node) insert(newNode *Node) int {
+	c := Comp(newNode.Value, n.Value)
+	return c
 }
 
-func (n *Node) attachRightNode(node *Node, addWeight bool) *Node {
-	if node == nil { n.right = node; return nil }
-	if n != node {
-		n.right = node
-		node.nodeType = RIGHT
-		node.parent = n
-		if addWeight { n.balance += 1 }
-	}
-	return n
-}
-
-func (n *Node) detachRightNode() *Node {
-	if n.hasRightChild() {
-		node := n.right
-		n.right = nil
-		node.parent = nil
-		return node
-	}
-	return nil
-}
-
-func (n *Node) detachLeftNode() *Node {
-	if n.hasLeftChild() {
-		node := n.left
-		n.left = nil
-		node.parent = nil
-		return node
-	}
-	return nil
-}
-
-func (n *Node) detachNode(nodeType NodeType) *Node {
+func (n *Node) get(k interface{}) *Node {
 	var node *Node = nil
-	switch nodeType {
-	case LEFT:
-		node = n.detachLeftNode()
-	case RIGHT:
-		node = n.detachRightNode()
+	c := Comp(k, n.Value)
+	if c < 0 {
+		if n.left != nil { node = n.left.get(k) }
+	} else if c > 0 {
+		if n.right != nil { node = n.right.get(k) }
+	} else {
+		node = n
 	}
 	return node
 }
 
-func (n *Node) replace(node *Node) {
-	n.Value = node.Value
-}
-
-func (n *Node) attachNode(node *Node, nodeType NodeType) *Node {
-	switch nodeType {
-	default:
-		break
-	case LEFT:
-		n.attachLeftNode(node, false)
-	case RIGHT:
-		n.attachRightNode(node, false)
-	}
+func (n *Node) deleteNode() *Node {
 	return n
 }
 
 func (n *Node) rotateLeft() *Node {
-	var node *Node = n.detachRightNode()
-	if node.leansLeft() {
-		node = node.rotateRight()
-	}
-	if n.isRoot(){
-		node.nodeType = ROOT
-	} else if n.hasParent() {
-		n.parent.attachNode(node, n.nodeType)
-	}
-	if node.hasLeftChild() {
-		n.attachRightNode(node.detachLeftNode(), true)
-	}
-	node.attachLeftNode(n, true)
-	if math.Abs(float64(n.balance)) < 2 { node.balance = n.balance * -1 }
-	n.setBalance()
+	var node *Node
 	return node
 }
 
 func (n *Node) rotateRight() *Node {
-	var node *Node = n.detachLeftNode()
-	if node.leansRight() {
-		node = node.rotateLeft()
-	}
-	if n.isRoot() {
-		node.nodeType = ROOT
-	} else if n.hasParent() {
-		n.parent.attachNode(node, n.nodeType)
-	}
-	if node.hasRightChild() {
-		n.attachLeftNode(node.detachRightNode(), true)
-	}
-	node.attachRightNode(n, true)
-	if math.Abs(float64(n.balance)) < 2 { node.balance = n.balance * -1 }
-	n.setBalance()
+	var node *Node
 	return node
 }
 
-func (n *Node) setBalance() {
-	if n.hasNoChildren() || n.hasTwoChildren() {
-		n.balance = 0
-	} else if n.hasLeftChild() {
-		n.balance = -1
-	} else { n.balance = 1 }
-}
-
-func (n *Node) hasNoChildren() bool {
-	return n.right == nil && n.left == nil
-}
-
-func (n *Node) hasTwoChildren() bool {
-	return n.right != nil && n.left != nil
-}
-
-func (n *Node) hasRightChild() bool {
-	return n.right != nil
-}
-
-func (n *Node) hasLeftChild() bool {
-	return n.left != nil
-}
-
-func (n *Node) hasParent() bool {
-	return n.parent != nil
-}
-
-func (n *Node) leansRight() bool {
-	return n.balance > 0
-}
-
-func (n *Node) leansLeft() bool {
-	return n.balance < 0
-}
-
-func (n *Node) isRoot() bool {
-	return n.nodeType == ROOT
-}
-
-func (n *Node) beginning() *Node {
-	var beginning *Node = n
-	for beginning.left != nil {
-		beginning = beginning.left
+func (n *Node) iterate(iterator NodeIterator, i *int, cont bool)  {
+	if n != nil && cont {
+		n.left.iterate(iterator, i, cont)
+		cont = iterator(n, *i)
+		*i += 1
+		n.right.iterate(iterator, i, cont)
 	}
-	return beginning
 }
 
-func (n *Node) end() *Node {
-	var end *Node = n
-	for end.right != nil {
-		end = end.right
+func (n *Node) r_iterate(iterator NodeIterator, i *int, cont bool)  {
+	if n != nil && cont {
+		n.right.iterate(iterator, i, cont)
+		cont = iterator(n, *i)
+		*i += 1
+		n.left.iterate(iterator, i, cont)
 	}
-	return end
 }
