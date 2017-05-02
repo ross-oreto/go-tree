@@ -8,9 +8,19 @@ import (
 	"math/rand"
 )
 
-func btree123() *Btree {
+func btreeInOrder(n int) *Btree {
 	btree := New()
-	btree.Insert(1).Insert(2).Insert(3)
+	for i := 1; i <= n; i++ {
+		btree.Insert(i)
+	}
+	return btree
+}
+
+func btreeROrder(n int) *Btree {
+	btree := New()
+	for i := n; i >= 1; i++ {
+		btree.Insert(i)
+	}
 	return btree
 }
 
@@ -23,9 +33,7 @@ func btreeRandom(n int) *Btree {
 }
 
 func TestBtree1(t *testing.T) {
-	btree := btreeRandom(1000)
-
-	btree.Debug()
+	btreeRandom(9).Debug()
 }
 
 //func TestBtree2(t *testing.T) {

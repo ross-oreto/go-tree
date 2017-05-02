@@ -24,6 +24,7 @@ func New() *Btree { return new(Btree).Init() }
 
 func (t *Btree) Init() *Btree {
 	t.root = nil
+	t.len = 0
 	return t
 }
 
@@ -44,6 +45,7 @@ func (t *Btree) balance() float64 {
 
 func (t *Btree) Insert(value interface{}) *Btree {
 	t.root = insert(t.root, value)
+	t.len += 1
 	return t
 }
 
@@ -72,8 +74,8 @@ func insert(n *Node, value interface{}) *Node {
 			case lc < 0:
 				return n.rotateRight()
 			case lc > 0:
-				n.left = n.left.rotateLeft()
-				return n.rotateRight()
+				n.left = n.left.rotateRight()
+				return n.rotateLeft()
 			}
 		} else if balance < -1 {
 			rc := 0
@@ -82,9 +84,14 @@ func insert(n *Node, value interface{}) *Node {
 			case rc > 0:
 				return n.rotateLeft()
 			case rc < 0:
-				n.right = n.right.rotateRight()
-				return n.rotateLeft()
+				n.right = n.right.rotateLeft()
+				return n.rotateRight()
 			}
+		}
+
+		bal := n.balance()
+		if bal < -1 || bal > 1 {
+			n.Debug()
 		}
 	}
 	return n
@@ -252,7 +259,7 @@ func (n *Node) Debug() {
 		children = fmt.Sprint("left child:", n.left.String())
 	}
 
-	fmt.Println(n.String(), "|", "height", n.height, "|", children)
+	fmt.Println(n.String(), "|", "height", n.height, "|", "balance", n.balance(), "|", children)
 }
 
 func Comp(v1, v2 interface{}) int  {
@@ -332,30 +339,30 @@ func (n *Node) deleteNode() *Node {
 	return n
 }
 
-func (n *Node) rotateLeft() *Node {
-	r := n.right
-	rl := r.left
-	// Rotation
-	r.left, n.right = n, rl
-
-	// update heights
-	n.height = math.Max(height(n.left), height(n.right)) + 1
-	r.height = math.Max(height(r.left), height(r.right)) + 1
-
-	return r
-}
-
 func (n *Node) rotateRight() *Node {
 	l := n.left
-	lr := l.right
+	t := l.right
 	// Rotation
-	l.right, n.left = n, lr
+	l.right, n.left = n, t
 
 	// update heights
 	l.height = math.Max(height(l.left), height(l.right)) + 1
 	n.height = math.Max(height(n.left), height(n.right)) + 1
 
 	return l
+}
+
+func (n *Node) rotateLeft() *Node {
+	r := n.right
+	t := r.left
+	// Rotation
+	r.left, n.right = n, t
+
+	// update heights
+	n.height = math.Max(height(n.left), height(n.right)) + 1
+	r.height = math.Max(height(r.left), height(r.right)) + 1
+
+	return r
 }
 
 func (n *Node) iterate(iterator NodeIterator, i *int, cont bool)  {
