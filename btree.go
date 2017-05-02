@@ -2,10 +2,12 @@ package tree
 
 import (
 	"fmt"
+	"math"
 )
 
 type Btree struct {
 	root *Node
+	len int
 }
 
 type Comparer interface {
@@ -15,12 +17,11 @@ type Comparer interface {
 type Node struct {
 	Value interface{}
 	left, right *Node
-	balance int
+	height float64
 }
 
 func New() *Btree { return new(Btree).Init() }
 
-// btree methods
 func (t *Btree) Init() *Btree {
 	t.root = nil
 	return t
@@ -34,14 +35,59 @@ func (t *Btree) Empty() bool {
 	return t.root == nil
 }
 
-func (t *Btree) Insert(value interface{}) *Btree {
-	var newNode *Node = (&Node{Value: value}).Init()
-	if t.Empty() {
-		t.root = newNode
-	} else {
-		t.root.insert(newNode)
+func (t *Btree) balance() float64 {
+	if t.root != nil {
+		return t.root.balance()
 	}
+	return 0
+}
+
+func (t *Btree) Insert(value interface{}) *Btree {
+	t.root = insert(t.root, value)
 	return t
+}
+
+func insert(n *Node, value interface{}) *Node {
+	if n == nil {
+		return (&Node{Value: value}).Init()
+	} else {
+		c := Comp(value, n.Value)
+		switch {
+		case c > 0:
+			n.right = insert(n.right, value)
+		case c < 0:
+			n.left = insert(n.left, value)
+		default:
+			n.Value = value
+			return n
+		}
+
+		n.height = math.Max(height(n.left), height(n.right)) + 1
+		balance := n.balance()
+
+		if balance > 1 {
+			lc := 0
+			if n.left != nil { lc = Comp(value, n.left.Value) }
+			switch {
+			case lc < 0:
+				return n.rotateRight()
+			case lc > 0:
+				n.left = n.left.rotateLeft()
+				return n.rotateRight()
+			}
+		} else if balance < -1 {
+			rc := 0
+			if n.right != nil { rc = Comp(value, n.right.Value) }
+			switch {
+			case rc > 0:
+				return n.rotateLeft()
+			case rc < 0:
+				n.right = n.right.rotateRight()
+				return n.rotateLeft()
+			}
+		}
+	}
+	return n
 }
 
 func (t *Btree) InsertAll(values []interface{}) *Btree {
@@ -166,7 +212,9 @@ func (t *Btree) Debug() {
 		fmt.Println("tree is empty")
 	} else { fmt.Println(t.Len(), "elements") }
 	t.Ascend(func(n *Node, i int) bool {
-		fmt.Print(i, "-")
+		if Comp(t.root.Value, n.Value) == 0 {
+			fmt.Print("ROOT ** ")
+		}
 		n.Debug()
 		return true
 	})
@@ -182,7 +230,7 @@ func (t *Btree) count(node *Node, nodes *int) {
 }
 
 func (n *Node) Init() *Node {
-	n.balance = 0
+	n.height = 1
 	n.left = nil
 	n.right = nil
 	return n
@@ -204,7 +252,7 @@ func (n *Node) Debug() {
 		children = fmt.Sprint("left child:", n.left.String())
 	}
 
-	fmt.Println(n.String(), "|", "weight", n.balance, "|", children)
+	fmt.Println(n.String(), "|", "height", n.height, "|", children)
 }
 
 func Comp(v1, v2 interface{}) int  {
@@ -253,9 +301,18 @@ func Comp(v1, v2 interface{}) int  {
 	return c
 }
 
-func (n *Node) insert(newNode *Node) int {
-	c := Comp(newNode.Value, n.Value)
-	return c
+func height(n *Node) float64 {
+	if n != nil {
+		return n.height
+	}
+	return 0
+}
+
+func (n *Node) balance() float64 {
+	if n != nil {
+		return height(n.left) - height(n.right)
+	}
+	return 0
 }
 
 func (n *Node) get(k interface{}) *Node {
@@ -276,13 +333,29 @@ func (n *Node) deleteNode() *Node {
 }
 
 func (n *Node) rotateLeft() *Node {
-	var node *Node
-	return node
+	r := n.right
+	rl := r.left
+	// Rotation
+	r.left, n.right = n, rl
+
+	// update heights
+	n.height = math.Max(height(n.left), height(n.right)) + 1
+	r.height = math.Max(height(r.left), height(r.right)) + 1
+
+	return r
 }
 
 func (n *Node) rotateRight() *Node {
-	var node *Node
-	return node
+	l := n.left
+	lr := l.right
+	// Rotation
+	l.right, n.left = n, lr
+
+	// update heights
+	l.height = math.Max(height(l.left), height(l.right)) + 1
+	n.height = math.Max(height(n.left), height(n.right)) + 1
+
+	return l
 }
 
 func (n *Node) iterate(iterator NodeIterator, i *int, cont bool)  {
