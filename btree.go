@@ -44,6 +44,7 @@ func (t *Btree) balance() float64 {
 }
 
 func (t *Btree) Insert(value interface{}) *Btree {
+	fmt.Println(value)
 	t.root = insert(t.root, value)
 	t.len += 1
 	return t
@@ -54,12 +55,11 @@ func insert(n *Node, value interface{}) *Node {
 		return (&Node{Value: value}).Init()
 	} else {
 		c := Comp(value, n.Value)
-		switch {
-		case c > 0:
+		if c > 0 {
 			n.right = insert(n.right, value)
-		case c < 0:
+		} else if c < 0 {
 			n.left = insert(n.left, value)
-		default:
+		} else {
 			n.Value = value
 			return n
 		}
@@ -68,30 +68,23 @@ func insert(n *Node, value interface{}) *Node {
 		balance := n.balance()
 
 		if balance > 1 {
-			lc := 0
-			if n.left != nil { lc = Comp(value, n.left.Value) }
-			switch {
-			case lc < 0:
+			var c1 int = Comp(value, n.left.Value)
+			if c1 == 0 { fmt.Println(value, "==", n.left.Value)}
+			if c1 < 0 {
 				return n.rotateRight()
-			case lc > 0:
-				n.left = n.left.rotateRight()
-				return n.rotateLeft()
+			} else if c1 > 0 {
+				n.left = n.left.rotateLeft()
+				return n.rotateRight()
 			}
 		} else if balance < -1 {
-			rc := 0
-			if n.right != nil { rc = Comp(value, n.right.Value) }
-			switch {
-			case rc > 0:
+			var c2 int = Comp(value, n.right.Value)
+			if c2 == 0 { fmt.Println(value, "==", n.right.Value)}
+			if c2 > 0 {
 				return n.rotateLeft()
-			case rc < 0:
-				n.right = n.right.rotateLeft()
-				return n.rotateRight()
+			} else if c2 < 0 {
+				n.right = n.right.rotateRight()
+				return n.rotateLeft()
 			}
-		}
-
-		bal := n.balance()
-		if bal < -1 || bal > 1 {
-			n.Debug()
 		}
 	}
 	return n

@@ -24,6 +24,15 @@ func btreeROrder(n int) *Btree {
 	return btree
 }
 
+func btreeRandomFixed() *Btree {
+	btree := New()
+	//[]int{ 9,4,2,6,8,0,3,1,7,5 }
+	for _, v := range []int{ 9,4,2,6,8 } {
+		btree.Insert(v)
+	}
+	return btree
+}
+
 func btreeRandom(n int) *Btree {
 	btree := New()
 	for _, v := range rand.Perm(n) {
@@ -33,7 +42,7 @@ func btreeRandom(n int) *Btree {
 }
 
 func TestBtree1(t *testing.T) {
-	btreeRandom(9).Debug()
+	btreeRandomFixed().Debug()
 }
 
 //func TestBtree2(t *testing.T) {
