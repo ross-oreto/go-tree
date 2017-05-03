@@ -7,7 +7,6 @@ import (
 
 type Btree struct {
 	root *Node
-	len int
 }
 
 type Comparer interface {
@@ -24,7 +23,6 @@ func New() *Btree { return new(Btree).Init() }
 
 func (t *Btree) Init() *Btree {
 	t.root = nil
-	t.len = 0
 	return t
 }
 
@@ -36,17 +34,19 @@ func (t *Btree) Empty() bool {
 	return t.root == nil
 }
 
+func (t *Btree) NotEmpty() bool {
+	return t.root != nil
+}
+
 func (t *Btree) balance() float64 {
 	if t.root != nil {
-		return t.root.balance()
+		return balance(t.root)
 	}
 	return 0
 }
 
 func (t *Btree) Insert(value interface{}) *Btree {
-	fmt.Println(value)
 	t.root = insert(t.root, value)
-	t.len += 1
 	return t
 }
 
@@ -65,11 +65,10 @@ func insert(n *Node, value interface{}) *Node {
 		}
 
 		n.height = math.Max(height(n.left), height(n.right)) + 1
-		balance := n.balance()
+		balance := balance(n)
 
 		if balance > 1 {
 			var c1 int = Comp(value, n.left.Value)
-			if c1 == 0 { fmt.Println(value, "==", n.left.Value)}
 			if c1 < 0 {
 				return n.rotateRight()
 			} else if c1 > 0 {
@@ -78,7 +77,6 @@ func insert(n *Node, value interface{}) *Node {
 			}
 		} else if balance < -1 {
 			var c2 int = Comp(value, n.right.Value)
-			if c2 == 0 { fmt.Println(value, "==", n.right.Value)}
 			if c2 > 0 {
 				return n.rotateLeft()
 			} else if c2 < 0 {
@@ -127,11 +125,9 @@ func (t *Btree) Get(value interface{}) interface{} {
 }
 
 func (t *Btree) Len() int {
-	nodes := 0
-	if !t.Empty() {
-		t.count(t.root, &nodes)
-	}
-	return nodes
+	var i int = 0
+	t.count(t.root, &i)
+	return i
 }
 
 func (t *Btree) Head() *Node {
@@ -171,15 +167,57 @@ func (t *Btree) Values() []interface{} {
 }
 
 func (t *Btree) Delete(value interface{}) *Btree {
-	t.root.get(value).deleteNode()
+	t.root = deleteNode(t.root, value)
 	return t
 }
 
 func (t *Btree) DeleteAll(values []interface{}) *Btree {
-	for _, k := range values {
-		t.Delete(k)
+	for _, v := range values {
+		t.Delete(v)
 	}
 	return t
+}
+
+func deleteNode(n *Node, value interface{}) *Node {
+	if n == nil { return  n }
+
+	c := Comp(value, n.Value)
+
+	if c < 0 {
+		n.left = deleteNode(n.left, value)
+	} else if c > 0 {
+		n.right = deleteNode(n.right, value)
+	} else {
+		if n.left == nil {
+			t := n.right
+			n.Init()
+			return t
+		} else if n.right == nil {
+			t := n.left
+			n.Init()
+			return t
+		}
+		t := n.right.min()
+		n.Value = t.Value
+		n.right = deleteNode(n.right, t.Value)
+	}
+
+	//re-balance
+	if n == nil { return n}
+	n.height = math.Max(height(n.left), height(n.right)) + 1
+	bal := balance(n)
+	if bal > 1 {
+		subBal := balance(n.left)
+		if subBal >= 0 {
+
+		} else {
+
+		}
+	} else if bal < 1 {
+
+	}
+
+	return n
 }
 
 func (t *Btree) Pop() interface{} {
@@ -252,7 +290,84 @@ func (n *Node) Debug() {
 		children = fmt.Sprint("left child:", n.left.String())
 	}
 
-	fmt.Println(n.String(), "|", "height", n.height, "|", "balance", n.balance(), "|", children)
+	fmt.Println(n.String(), "|", "height", n.height, "|", "balance", balance(n), "|", children)
+}
+
+func height(n *Node) float64 {
+	if n != nil {
+		return n.height
+	}
+	return 0
+}
+
+func balance(n *Node) float64 {
+	if n == nil { return 0 }
+	return height(n.left) - height(n.right)
+}
+
+func (n *Node) get(val interface{}) *Node {
+	var node *Node = nil
+	c := Comp(val, n.Value)
+	if c < 0 {
+		if n.left != nil { node = n.left.get(val) }
+	} else if c > 0 {
+		if n.right != nil { node = n.right.get(val) }
+	} else {
+		node = n
+	}
+	return node
+}
+
+func (n *Node) rotateRight() *Node {
+	l := n.left
+	t := l.right
+	// Rotation
+	l.right, n.left = n, t
+
+	// update heights
+	n.height = math.Max(height(n.left), height(n.right)) + 1
+	l.height = math.Max(height(l.left), height(l.right)) + 1
+
+	return l
+}
+
+func (n *Node) rotateLeft() *Node {
+	r := n.right
+	t := r.left
+	// Rotation
+	r.left, n.right = n, t
+
+	// update heights
+	n.height = math.Max(height(n.left), height(n.right)) + 1
+	r.height = math.Max(height(r.left), height(r.right)) + 1
+
+	return r
+}
+
+func (n *Node) iterate(iterator NodeIterator, i *int, cont bool)  {
+	if n != nil && cont {
+		n.left.iterate(iterator, i, cont)
+		cont = iterator(n, *i)
+		*i += 1
+		n.right.iterate(iterator, i, cont)
+	}
+}
+
+func (n *Node) r_iterate(iterator NodeIterator, i *int, cont bool)  {
+	if n != nil && cont {
+		n.right.iterate(iterator, i, cont)
+		cont = iterator(n, *i)
+		*i += 1
+		n.left.iterate(iterator, i, cont)
+	}
+}
+
+func (n *Node) min() *Node {
+	current := n
+	for current.left != nil {
+		current = current.left
+	}
+	return current
 }
 
 func Comp(v1, v2 interface{}) int  {
@@ -299,79 +414,4 @@ func Comp(v1, v2 interface{}) int  {
 		if s1 > s2 { c = 1 } else if s1 < s2 { c = -1 } else { c = 0 }
 	}
 	return c
-}
-
-func height(n *Node) float64 {
-	if n != nil {
-		return n.height
-	}
-	return 0
-}
-
-func (n *Node) balance() float64 {
-	if n != nil {
-		return height(n.left) - height(n.right)
-	}
-	return 0
-}
-
-func (n *Node) get(k interface{}) *Node {
-	var node *Node = nil
-	c := Comp(k, n.Value)
-	if c < 0 {
-		if n.left != nil { node = n.left.get(k) }
-	} else if c > 0 {
-		if n.right != nil { node = n.right.get(k) }
-	} else {
-		node = n
-	}
-	return node
-}
-
-func (n *Node) deleteNode() *Node {
-	return n
-}
-
-func (n *Node) rotateRight() *Node {
-	l := n.left
-	t := l.right
-	// Rotation
-	l.right, n.left = n, t
-
-	// update heights
-	l.height = math.Max(height(l.left), height(l.right)) + 1
-	n.height = math.Max(height(n.left), height(n.right)) + 1
-
-	return l
-}
-
-func (n *Node) rotateLeft() *Node {
-	r := n.right
-	t := r.left
-	// Rotation
-	r.left, n.right = n, t
-
-	// update heights
-	n.height = math.Max(height(n.left), height(n.right)) + 1
-	r.height = math.Max(height(r.left), height(r.right)) + 1
-
-	return r
-}
-
-func (n *Node) iterate(iterator NodeIterator, i *int, cont bool)  {
-	if n != nil && cont {
-		n.left.iterate(iterator, i, cont)
-		cont = iterator(n, *i)
-		*i += 1
-		n.right.iterate(iterator, i, cont)
-	}
-}
-
-func (n *Node) r_iterate(iterator NodeIterator, i *int, cont bool)  {
-	if n != nil && cont {
-		n.right.iterate(iterator, i, cont)
-		cont = iterator(n, *i)
-		*i += 1
-		n.left.iterate(iterator, i, cont)
-	}
 }
