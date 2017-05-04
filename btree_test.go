@@ -38,7 +38,7 @@ func btreeRandom(n int) *Btree {
 	return btree
 }
 
-const benchLen = 1000000
+const benchLen = 1000
 var btreeDegree = flag.Int("degree", 32, "B-Tree degree")
 // perm returns a random permutation of n Int items in the range [0, n).
 func perm(n int) (out []gtree.Item) {
@@ -232,55 +232,71 @@ var gtPerm []gtree.Item
 //}
 
 func BenchmarkInsertRandomBtree(b *testing.B)  {
+	b.ReportAllocs()
 	bt = New()
 	btPerm = rand.Perm(benchLen)
-	for _, v := range btPerm {
-		bt.Insert(v)
+	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			bt.Insert(v)
+		}
 	}
 }
 
-func BenchmarkInsertRandomGtree(b *testing.B)  {
-	gt = gtree.New(*btreeDegree)
-	gtPerm = perm(benchLen)
-	for _, v := range gtPerm {
-		gt.ReplaceOrInsert(v)
-	}
-}
+//func BenchmarkInsertRandomGtree(b *testing.B)  {
+//	gt = gtree.New(*btreeDegree)
+//	gtPerm = perm(benchLen)
+//	for i := 0; i < b.N; i++ {
+//		for _, v := range gtPerm {
+//			gt.ReplaceOrInsert(v)
+//		}
+//	}
+//}
 
-func BenchmarkGetBtree(b *testing.B)  {
-	for _, v := range btPerm {
-		bt.Get(v)
-	}
-}
-
-func BenchmarkGetGtree(b *testing.B)  {
-	for _, v := range gtPerm {
-		gt.Get(v)
-	}
-}
-
-func BenchmarkIterationBtree(b *testing.B)  {
-	bt.Ascend(func(n *Node, i int) bool {
-		return true
-	})
-}
-
-func BenchmarkIterationGtree(b *testing.B)  {
-	gt.Ascend(func(a gtree.Item) bool {
-		return true
-	})
-}
-
-
+//func BenchmarkGetBtree(b *testing.B)  {
+//	for i := 0; i < b.N; i++ {
+//		for _, v := range btPerm {
+//			bt.Get(v)
+//		}
+//	}
+//}
+//
+//func BenchmarkGetGtree(b *testing.B)  {
+//	for i := 0; i < b.N; i++ {
+//		for _, v := range gtPerm {
+//			gt.Get(v)
+//		}
+//	}
+//}
+//
+//func BenchmarkIterationBtree(b *testing.B)  {
+//	for i := 0; i < b.N; i++ {
+//		bt.Ascend(func(n *Node, i int) bool {
+//			return true
+//		})
+//	}
+//}
+//
+//func BenchmarkIterationGtree(b *testing.B)  {
+//	for i := 0; i < b.N; i++ {
+//		gt.Ascend(func(a gtree.Item) bool {
+//			return true
+//		})
+//	}
+//}
+//
 //func BenchmarkDeleteBtree(b *testing.B)  {
-//	for _, v := range btPerm {
-//		bt.Remove(v)
+//	for i := 0; i < b.N; i++ {
+//		for _, v := range btPerm {
+//			bt.Delete(v)
+//		}
 //	}
 //}
 //
 //func BenchmarkDeleteGtree(b *testing.B)  {
-//	for _, v := range gtPerm {
-//		gt.Delete(v)
+//	for i := 0; i < b.N; i++ {
+//		for _, v := range gtPerm {
+//			gt.Delete(v)
+//		}
 //	}
 //}
 

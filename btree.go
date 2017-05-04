@@ -2,7 +2,6 @@ package tree
 
 import (
 	"fmt"
-	"math"
 )
 
 type Btree struct {
@@ -16,7 +15,7 @@ type Comparer interface {
 type Node struct {
 	Value interface{}
 	left, right *Node
-	height float64
+	height int8
 }
 
 func New() *Btree { return new(Btree).Init() }
@@ -38,7 +37,7 @@ func (t *Btree) NotEmpty() bool {
 	return t.root != nil
 }
 
-func (t *Btree) balance() float64 {
+func (t *Btree) balance() int8 {
 	if t.root != nil {
 		return balance(t.root)
 	}
@@ -64,7 +63,7 @@ func insert(n *Node, value interface{}) *Node {
 			return n
 		}
 
-		n.height = math.Max(height(n.left), height(n.right)) + 1
+		n.height = n.maxHeight() + 1
 		balance := balance(n)
 
 		if balance > 1 {
@@ -204,7 +203,7 @@ func deleteNode(n *Node, value interface{}) *Node {
 
 	//re-balance
 	if n == nil { return n}
-	n.height = math.Max(height(n.left), height(n.right)) + 1
+	n.height = n.maxHeight() + 1
 	bal := balance(n)
 	if bal > 1 {
 		if balance(n.left) >= 0 {
@@ -298,14 +297,14 @@ func (n *Node) Debug() {
 	fmt.Println(n.String(), "|", "height", n.height, "|", "balance", balance(n), "|", children)
 }
 
-func height(n *Node) float64 {
+func height(n *Node) int8 {
 	if n != nil {
 		return n.height
 	}
 	return 0
 }
 
-func balance(n *Node) float64 {
+func balance(n *Node) int8 {
 	if n == nil { return 0 }
 	return height(n.left) - height(n.right)
 }
@@ -330,8 +329,8 @@ func (n *Node) rotateRight() *Node {
 	l.right, n.left = n, t
 
 	// update heights
-	n.height = math.Max(height(n.left), height(n.right)) + 1
-	l.height = math.Max(height(l.left), height(l.right)) + 1
+	n.height = n.maxHeight() + 1
+	l.height = l.maxHeight() + 1
 
 	return l
 }
@@ -343,8 +342,8 @@ func (n *Node) rotateLeft() *Node {
 	r.left, n.right = n, t
 
 	// update heights
-	n.height = math.Max(height(n.left), height(n.right)) + 1
-	r.height = math.Max(height(r.left), height(r.right)) + 1
+	n.height = n.maxHeight() + 1
+	r.height = r.maxHeight() + 1
 
 	return r
 }
@@ -373,6 +372,13 @@ func (n *Node) min() *Node {
 		current = current.left
 	}
 	return current
+}
+
+func (n *Node) maxHeight() int8 {
+	rh := height(n.right)
+	lh := height(n.left)
+	if rh > lh { return rh }
+	return lh
 }
 
 func Comp(v1, v2 interface{}) int  {
