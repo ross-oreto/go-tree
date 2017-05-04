@@ -15,7 +15,7 @@ type Comparer interface {
 type Node struct {
 	Value interface{}
 	left, right *Node
-	height int8
+	height int
 }
 
 func New() *Btree { return new(Btree).Init() }
@@ -37,7 +37,7 @@ func (t *Btree) NotEmpty() bool {
 	return t.root != nil
 }
 
-func (t *Btree) balance() int8 {
+func (t *Btree) balance() int {
 	if t.root != nil {
 		return balance(t.root)
 	}
@@ -64,21 +64,21 @@ func insert(n *Node, value interface{}) *Node {
 		}
 
 		n.height = n.maxHeight() + 1
-		balance := balance(n)
+		c = balance(n)
 
-		if balance > 1 {
-			var c1 int = Comp(value, n.left.Value)
-			if c1 < 0 {
+		if c > 1 {
+			c = Comp(value, n.left.Value)
+			if c < 0 {
 				return n.rotateRight()
-			} else if c1 > 0 {
+			} else if c > 0 {
 				n.left = n.left.rotateLeft()
 				return n.rotateRight()
 			}
-		} else if balance < -1 {
-			var c2 int = Comp(value, n.right.Value)
-			if c2 > 0 {
+		} else if c < -1 {
+			c = Comp(value, n.right.Value)
+			if c > 0 {
 				return n.rotateLeft()
-			} else if c2 < 0 {
+			} else if c < 0 {
 				n.right = n.right.rotateRight()
 				return n.rotateLeft()
 			}
@@ -297,14 +297,14 @@ func (n *Node) Debug() {
 	fmt.Println(n.String(), "|", "height", n.height, "|", "balance", balance(n), "|", children)
 }
 
-func height(n *Node) int8 {
+func height(n *Node) int {
 	if n != nil {
 		return n.height
 	}
 	return 0
 }
 
-func balance(n *Node) int8 {
+func balance(n *Node) int {
 	if n == nil { return 0 }
 	return height(n.left) - height(n.right)
 }
@@ -374,7 +374,7 @@ func (n *Node) min() *Node {
 	return current
 }
 
-func (n *Node) maxHeight() int8 {
+func (n *Node) maxHeight() int {
 	rh := height(n.right)
 	lh := height(n.left)
 	if rh > lh { return rh }

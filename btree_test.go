@@ -38,7 +38,7 @@ func btreeRandom(n int) *Btree {
 	return btree
 }
 
-const benchLen = 1000
+const benchLen = 100000
 var btreeDegree = flag.Int("degree", 32, "B-Tree degree")
 // perm returns a random permutation of n Int items in the range [0, n).
 func perm(n int) (out []gtree.Item) {
@@ -214,8 +214,8 @@ func TestBtreeGet(t *testing.T) {
 
 var bt *Btree
 var gt *gtree.BTree
-var btPerm []int
-var gtPerm []gtree.Item
+var btPerm []int = rand.Perm(benchLen)
+
 
 //func BenchmarkInsertBtree(b *testing.B)  {
 //	btree := New()
@@ -232,9 +232,7 @@ var gtPerm []gtree.Item
 //}
 
 func BenchmarkInsertRandomBtree(b *testing.B)  {
-	b.ReportAllocs()
 	bt = New()
-	btPerm = rand.Perm(benchLen)
 	for i := 0; i < b.N; i++ {
 		for _, v := range btPerm {
 			bt.Insert(v)
@@ -242,15 +240,14 @@ func BenchmarkInsertRandomBtree(b *testing.B)  {
 	}
 }
 
-//func BenchmarkInsertRandomGtree(b *testing.B)  {
-//	gt = gtree.New(*btreeDegree)
-//	gtPerm = perm(benchLen)
-//	for i := 0; i < b.N; i++ {
-//		for _, v := range gtPerm {
-//			gt.ReplaceOrInsert(v)
-//		}
-//	}
-//}
+func BenchmarkInsertRandomGtree(b *testing.B)  {
+	gt = gtree.New(*btreeDegree)
+	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			gt.ReplaceOrInsert(gtree.Int(v))
+		}
+	}
+}
 
 //func BenchmarkGetBtree(b *testing.B)  {
 //	for i := 0; i < b.N; i++ {
