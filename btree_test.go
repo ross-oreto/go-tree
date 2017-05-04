@@ -49,8 +49,7 @@ func perm(n int) (out []gtree.Item) {
 }
 
 func TestBtreeGet(t *testing.T) {
-	//values := []interface{}{ 9,4,2,6,8,0,3,1,7,5 }
-	values := []interface{}{ 1,2,3 }
+	values := []interface{}{ 9,4,2,6,8,0,3,1,7,5 }
 	btree := btreeFixed(values)
 
 	expect := len(values)

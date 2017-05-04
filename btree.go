@@ -207,14 +207,19 @@ func deleteNode(n *Node, value interface{}) *Node {
 	n.height = math.Max(height(n.left), height(n.right)) + 1
 	bal := balance(n)
 	if bal > 1 {
-		subBal := balance(n.left)
-		if subBal >= 0 {
-
+		if balance(n.left) >= 0 {
+			return n.rotateRight()
 		} else {
-
+			n.left =  n.left.rotateLeft()
+			return n.rotateRight()
 		}
-	} else if bal < 1 {
-
+	} else if bal < -1 {
+		if balance(n.right) <= 0 {
+			return n.rotateLeft()
+		} else {
+			n.right = n.right.rotateRight()
+			return n.rotateLeft()
+		}
 	}
 
 	return n
