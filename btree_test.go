@@ -40,13 +40,6 @@ func btreeRandom(n int) *Btree {
 
 const benchLen = 1000000
 var btreeDegree = flag.Int("degree", 32, "B-Tree degree")
-// perm returns a random permutation of n Int items in the range [0, n).
-func perm(n int) (out []gtree.Item) {
-	for _, v := range rand.Perm(n) {
-		out = append(out, gtree.Int(v))
-	}
-	return
-}
 
 func TestBtree_Get(t *testing.T) {
 	values := []interface{}{ 9,4,2,6,8,0,3,1,7,5 }

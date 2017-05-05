@@ -129,7 +129,8 @@ func (t *Btree) Len() int {
 	return i
 }
 
-func (t *Btree) Head() *Node {
+func (t *Btree) Head() interface{} {
+	if t.root == nil { return nil }
 	var beginning *Node = t.root
 	for beginning.left != nil {
 		beginning = beginning.left
@@ -142,7 +143,8 @@ func (t *Btree) Head() *Node {
 	return beginning
 }
 
-func (t *Btree) Tail() *Node {
+func (t *Btree) Tail() interface{} {
+	if t.root == nil { return nil }
 	var beginning *Node = t.root
 	for beginning.right != nil {
 		beginning = beginning.right
@@ -224,15 +226,15 @@ func deleteNode(n *Node, value interface{}) *Node {
 }
 
 func (t *Btree) Pop() interface{} {
-	var node *Node = t.Tail()
-
-	return node.Value
+	value := t.Tail()
+	if value != nil { t.Delete(value) }
+	return value
 }
 
 func (t *Btree) Pull()  interface{} {
-	var node *Node = t.Head()
-
-	return node.Value
+	value := t.Head()
+	if value != nil { t.Delete(value) }
+	return value
 }
 
 type NodeIterator func(n *Node, i int) bool
