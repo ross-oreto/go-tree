@@ -38,7 +38,7 @@ func btreeRandom(n int) *Btree {
 	return btree
 }
 
-const benchLen = 100000
+const benchLen = 1000000
 var btreeDegree = flag.Int("degree", 32, "B-Tree degree")
 // perm returns a random permutation of n Int items in the range [0, n).
 func perm(n int) (out []gtree.Item) {
@@ -48,38 +48,53 @@ func perm(n int) (out []gtree.Item) {
 	return
 }
 
-func TestBtreeGet(t *testing.T) {
+func TestBtree_Get(t *testing.T) {
 	values := []interface{}{ 9,4,2,6,8,0,3,1,7,5 }
-	btree := btreeFixed(values)
+	btree := btreeFixed(values).InsertAll(values)
 
-	expect := len(values)
-	actual := btree.Len()
-	if actual != len(values) {
+	expect, actual := len(values), btree.Len()
+	if actual != expect {
 		t.Error("length should equal", expect, "actual", actual)
 	}
 
 	expect = 2
-	if btree.Get(2) == nil {
+	if btree.Get(expect) == nil {
 		t.Error("value should equal", expect)
 	}
 
-	btree.DeleteAll(values)
-	expect = 0
-	actual = btree.Len()
-	if actual != expect {
-		t.Error("length should equal", expect, "actual", actual)
+	//btree.DeleteAll(values)
+	//expect = 0
+	//actual = btree.Len()
+	//if actual != expect {
+	//	t.Error("length should equal", expect, "actual", actual)
+	//}
+}
+
+func TestBtree_Contains(t *testing.T) {
+	btree := btreeInOrder(1000)
+
+	test := 1
+	if !btree.Contains(test) { t.Error("tree should contain", test) }
+
+	test2 := []interface{}{1, 2, 3, 4}
+	if !btree.ContainsAll(test2) { t.Error("tree should contain", test2) }
+
+	test2 = []interface{}{ 5 }
+	if !btree.ContainsAny(test2) { t.Error("tree should contain", test2) }
+
+	test2 = []interface{}{ 5000, 2000 }
+	if btree.ContainsAny(test2) { t.Error("tree should not contain any", test2) }
+}
+
+func TestBtree_String(t *testing.T) {
+	btree := btreeFixed([]interface{}{1, 2, 3, 4, 5, 6})
+	s1 := btree.String()
+	s2 := "[1 2 3 4 5 6]"
+	if s1 != s2 {
+		t.Error(s1, "tree string representation should equal", s2)
 	}
 }
 
-//func TestBtree2(t *testing.T) {
-//	btree := btree123().InsertAll([]interface{}{4, 5, 6})
-//	s1 := btree.String()
-//	s2 := "[1 2 3 4 5 6 a b c]"
-//	if s1 != s2 {
-//		t.Error(s1, "tree string representation should equal", s2)
-//	}
-//}
-//
 //func TestIterateBtree(t *testing.T) {
 //	const capacity = 3
 //	btree := btree123()
@@ -214,25 +229,30 @@ func TestBtreeGet(t *testing.T) {
 
 var bt *Btree
 var gt *gtree.BTree
-var btPerm []int = rand.Perm(benchLen)
+var btPerm []int
 
+func BenchmarkInsertBtree(b *testing.B)  {
+	btree := New()
+	for i := 0; i < b.N; i++ {
+		for i := 0; i < benchLen; i++ {
+			btree.Insert(i)
+		}
+	}
+}
 
-//func BenchmarkInsertBtree(b *testing.B)  {
-//	btree := New()
-//	for i := 0; i < benchLen; i++ {
-//		btree.Insert(i)
-//	}
-//}
-//
-//func BenchmarkInsertGtree(b *testing.B)  {
-//	btree := gtree.New(*btreeDegree)
-//	for i := gtree.Int(0); i < benchLen; i++ {
-//		btree.ReplaceOrInsert(i)
-//	}
-//}
+func BenchmarkInsertGtree(b *testing.B)  {
+	btree := gtree.New(*btreeDegree)
+	for i := 0; i < b.N; i++ {
+		for i := gtree.Int(0); i < benchLen; i++ {
+			btree.ReplaceOrInsert(i)
+		}
+	}
+}
 
 func BenchmarkInsertRandomBtree(b *testing.B)  {
 	bt = New()
+	btPerm = rand.Perm(benchLen)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, v := range btPerm {
 			bt.Insert(v)
@@ -249,51 +269,51 @@ func BenchmarkInsertRandomGtree(b *testing.B)  {
 	}
 }
 
-//func BenchmarkGetBtree(b *testing.B)  {
-//	for i := 0; i < b.N; i++ {
-//		for _, v := range btPerm {
-//			bt.Get(v)
-//		}
-//	}
-//}
-//
-//func BenchmarkGetGtree(b *testing.B)  {
-//	for i := 0; i < b.N; i++ {
-//		for _, v := range gtPerm {
-//			gt.Get(v)
-//		}
-//	}
-//}
-//
-//func BenchmarkIterationBtree(b *testing.B)  {
-//	for i := 0; i < b.N; i++ {
-//		bt.Ascend(func(n *Node, i int) bool {
-//			return true
-//		})
-//	}
-//}
-//
-//func BenchmarkIterationGtree(b *testing.B)  {
-//	for i := 0; i < b.N; i++ {
-//		gt.Ascend(func(a gtree.Item) bool {
-//			return true
-//		})
-//	}
-//}
-//
-//func BenchmarkDeleteBtree(b *testing.B)  {
-//	for i := 0; i < b.N; i++ {
-//		for _, v := range btPerm {
-//			bt.Delete(v)
-//		}
-//	}
-//}
-//
-//func BenchmarkDeleteGtree(b *testing.B)  {
-//	for i := 0; i < b.N; i++ {
-//		for _, v := range gtPerm {
-//			gt.Delete(v)
-//		}
-//	}
-//}
+func BenchmarkGetBtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			bt.Get(v)
+		}
+	}
+}
+
+func BenchmarkGetGtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			gt.Get(gtree.Int(v))
+		}
+	}
+}
+
+func BenchmarkIterationBtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		bt.Ascend(func(n *Node, i int) bool {
+			return true
+		})
+	}
+}
+
+func BenchmarkIterationGtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		gt.Ascend(func(a gtree.Item) bool {
+			return true
+		})
+	}
+}
+
+func BenchmarkDeleteBtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			bt.Delete(v)
+		}
+	}
+}
+
+func BenchmarkDeleteGtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			gt.Delete(gtree.Int(v))
+		}
+	}
+}
 

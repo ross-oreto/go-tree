@@ -9,13 +9,13 @@ type Btree struct {
 }
 
 type Comparer interface {
-	Comp(val interface{}) int
+	Comp(val interface{}) int8
 }
 
 type Node struct {
 	Value interface{}
 	left, right *Node
-	height int
+	height int8
 }
 
 func New() *Btree { return new(Btree).Init() }
@@ -37,7 +37,7 @@ func (t *Btree) NotEmpty() bool {
 	return t.root != nil
 }
 
-func (t *Btree) balance() int {
+func (t *Btree) balance() int8 {
 	if t.root != nil {
 		return balance(t.root)
 	}
@@ -156,10 +156,9 @@ func (t *Btree) Tail() *Node {
 }
 
 func (t *Btree) Values() []interface{} {
-	size := t.Len()
-	slice := make([]interface{}, size)
+	var slice []interface{}
 	t.Ascend(func(n *Node, i int) bool {
-		slice[i] = n.Value
+		slice = append(slice, n.Value)
 		return true
 	})
 	return slice
@@ -240,12 +239,12 @@ type NodeIterator func(n *Node, i int) bool
 
 func (t *Btree) Ascend(iterator NodeIterator) {
 	var i int = 0
-	t.root.iterate(iterator, &i, true)
+	if t.root != nil { t.root.iterate(iterator, &i, true) }
 }
 
 func (t *Btree) Descend(iterator NodeIterator) {
 	var i int = 0
-	t.root.r_iterate(iterator, &i, true)
+	if t.root != nil { t.root.r_iterate(iterator, &i, true) }
 }
 
 func (t *Btree) Debug() {
@@ -253,6 +252,7 @@ func (t *Btree) Debug() {
 	if t.Empty() {
 		fmt.Println("tree is empty")
 	} else { fmt.Println(t.Len(), "elements") }
+
 	t.Ascend(func(n *Node, i int) bool {
 		if Comp(t.root.Value, n.Value) == 0 {
 			fmt.Print("ROOT ** ")
@@ -297,14 +297,14 @@ func (n *Node) Debug() {
 	fmt.Println(n.String(), "|", "height", n.height, "|", "balance", balance(n), "|", children)
 }
 
-func height(n *Node) int {
+func height(n *Node) int8 {
 	if n != nil {
 		return n.height
 	}
 	return 0
 }
 
-func balance(n *Node) int {
+func balance(n *Node) int8 {
 	if n == nil { return 0 }
 	return height(n.left) - height(n.right)
 }
@@ -324,9 +324,8 @@ func (n *Node) get(val interface{}) *Node {
 
 func (n *Node) rotateRight() *Node {
 	l := n.left
-	t := l.right
 	// Rotation
-	l.right, n.left = n, t
+	l.right, n.left = n, l.right
 
 	// update heights
 	n.height = n.maxHeight() + 1
@@ -337,9 +336,8 @@ func (n *Node) rotateRight() *Node {
 
 func (n *Node) rotateLeft() *Node {
 	r := n.right
-	t := r.left
 	// Rotation
-	r.left, n.right = n, t
+	r.left, n.right = n, r.left
 
 	// update heights
 	n.height = n.maxHeight() + 1
@@ -374,15 +372,15 @@ func (n *Node) min() *Node {
 	return current
 }
 
-func (n *Node) maxHeight() int {
+func (n *Node) maxHeight() int8 {
 	rh := height(n.right)
 	lh := height(n.left)
 	if rh > lh { return rh }
 	return lh
 }
 
-func Comp(v1, v2 interface{}) int  {
-	c := 0
+func Comp(v1, v2 interface{}) int8  {
+	var c int8 = 0
 
 	switch v1.(type) {
 	default:
