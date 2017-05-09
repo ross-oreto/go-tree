@@ -6,6 +6,8 @@ import (
 
 type Btree struct {
 	root *Node
+	values []interface{}
+	len int
 }
 
 type Comparer interface {
@@ -22,6 +24,8 @@ func New() *Btree { return new(Btree).Init() }
 
 func (t *Btree) Init() *Btree {
 	t.root = nil
+	t.values = nil
+	t.len = 0
 	return t
 }
 
@@ -45,21 +49,26 @@ func (t *Btree) balance() int8 {
 }
 
 func (t *Btree) Insert(value interface{}) *Btree {
-	t.root = insert(t.root, value)
+	added := false
+	t.root = insert(t.root, value, &added)
+	if added { t.len += 1 }
+	t.values = nil
 	return t
 }
 
-func insert(n *Node, value interface{}) *Node {
+func insert(n *Node, value interface{}, added *bool) *Node {
 	if n == nil {
+		*added = true
 		return (&Node{Value: value}).Init()
 	} else {
 		c := Comp(value, n.Value)
 		if c > 0 {
-			n.right = insert(n.right, value)
+			n.right = insert(n.right, value, added)
 		} else if c < 0 {
-			n.left = insert(n.left, value)
+			n.left = insert(n.left, value, added)
 		} else {
 			n.Value = value
+			*added = false
 			return n
 		}
 
@@ -124,9 +133,7 @@ func (t *Btree) Get(value interface{}) interface{} {
 }
 
 func (t *Btree) Len() int {
-	var i int = 0
-	t.count(t.root, &i)
-	return i
+	return t.len
 }
 
 func (t *Btree) Head() interface{} {
@@ -140,7 +147,8 @@ func (t *Btree) Head() interface{} {
 			beginning = beginning.right
 		}
 	}
-	return beginning
+	if beginning != nil { return beginning.Value }
+	return nil
 }
 
 func (t *Btree) Tail() interface{} {
@@ -154,20 +162,25 @@ func (t *Btree) Tail() interface{} {
 			beginning = beginning.left
 		}
 	}
-	return beginning
+	if beginning != nil { return beginning.Value }
+	return nil
 }
 
 func (t *Btree) Values() []interface{} {
-	var slice []interface{}
-	t.Ascend(func(n *Node, i int) bool {
-		slice = append(slice, n.Value)
-		return true
-	})
-	return slice
+	if t.values == nil {
+		t.Ascend(func(n *Node, i int) bool {
+			t.values = append(t.values, n.Value)
+			return true
+		})
+	}
+	return t.values
 }
 
 func (t *Btree) Delete(value interface{}) *Btree {
-	t.root = deleteNode(t.root, value)
+	deleted := false
+	t.root = deleteNode(t.root, value, &deleted)
+	if deleted { t.len -= 1 }
+	t.values = nil
 	return t
 }
 
@@ -178,15 +191,15 @@ func (t *Btree) DeleteAll(values []interface{}) *Btree {
 	return t
 }
 
-func deleteNode(n *Node, value interface{}) *Node {
-	if n == nil { return  n }
+func deleteNode(n *Node, value interface{}, deleted *bool) *Node {
+	if n == nil { return n }
 
 	c := Comp(value, n.Value)
 
 	if c < 0 {
-		n.left = deleteNode(n.left, value)
+		n.left = deleteNode(n.left, value, deleted)
 	} else if c > 0 {
-		n.right = deleteNode(n.right, value)
+		n.right = deleteNode(n.right, value, deleted)
 	} else {
 		if n.left == nil {
 			t := n.right
@@ -199,11 +212,12 @@ func deleteNode(n *Node, value interface{}) *Node {
 		}
 		t := n.right.min()
 		n.Value = t.Value
-		n.right = deleteNode(n.right, t.Value)
+		n.right = deleteNode(n.right, t.Value, deleted)
+		*deleted = true
 	}
 
 	//re-balance
-	if n == nil { return n}
+	if n == nil { return n }
 	n.height = n.maxHeight() + 1
 	bal := balance(n)
 	if bal > 1 {
@@ -263,14 +277,6 @@ func (t *Btree) Debug() {
 		return true
 	})
 	fmt.Println("----------------------------------------------------------------------------------------------")
-}
-
-func (t *Btree) count(node *Node, nodes *int) {
-	if node != nil {
-		t.count(node.left, nodes)
-		*nodes += 1
-		t.count(node.right, nodes)
-	}
 }
 
 func (n *Node) Init() *Node {
@@ -391,6 +397,9 @@ func Comp(v1, v2 interface{}) int8  {
 	case int:
 		t1, t2 := v1.(int), v2.(int)
 		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
+	case string:
+		t1, t2 := v1.(string), v2.(string)
+		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
 	case uint:
 		t1, t2 := v1.(uint), v2.(uint)
 		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
@@ -415,9 +424,36 @@ func Comp(v1, v2 interface{}) int8  {
 	case complex128:
 		t1, t2 := v1.(float64), v2.(float64)
 		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case string:
-		t1, t2 := v1.(string), v2.(string)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
+	case *string:
+		t1, t2 := v1.(*string), v2.(*string)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *int:
+		t1, t2 := v1.(*int), v2.(*int)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *uint:
+		t1, t2 := v1.(*uint), v2.(*uint)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *float32:
+		t1, t2 := v1.(*float32), v2.(*float32)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *float64:
+		t1, t2 := v1.(*float64), v2.(*float64)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *uintptr:
+		t1, t2 := v1.(*uintptr), v2.(*uintptr)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *byte:
+		t1, t2 := v1.(*byte), v2.(*byte)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *rune:
+		t1, t2 := v1.(*rune), v2.(*rune)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *complex64:
+		t1, t2 := v1.(*float64), v2.(*float64)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
+	case *complex128:
+		t1, t2 := v1.(*float64), v2.(*float64)
+		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
 	case Comparer:
 		c = v1.(Comparer).Comp(v2)
 	case fmt.Stringer:

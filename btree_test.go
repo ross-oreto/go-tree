@@ -2,10 +2,10 @@ package tree
 
 import (
 	"testing"
-	//"reflect"
 	gtree "github.com/google/btree"
 	"flag"
 	"math/rand"
+	"reflect"
 )
 
 func btreeInOrder(n int) *Btree {
@@ -16,25 +16,9 @@ func btreeInOrder(n int) *Btree {
 	return btree
 }
 
-func btreeROrder(n int) *Btree {
-	btree := New()
-	for i := n; i >= 1; i++ {
-		btree.Insert(i)
-	}
-	return btree
-}
-
 func btreeFixed(values []interface{}) *Btree {
 	btree := New()
 	btree.InsertAll(values)
-	return btree
-}
-
-func btreeRandom(n int) *Btree {
-	btree := New()
-	for _, v := range rand.Perm(n) {
-		btree.Insert(v)
-	}
 	return btree
 }
 
@@ -54,13 +38,6 @@ func TestBtree_Get(t *testing.T) {
 	if btree.Get(expect) == nil {
 		t.Error("value should equal", expect)
 	}
-
-	//btree.DeleteAll(values)
-	//expect = 0
-	//actual = btree.Len()
-	//if actual != expect {
-	//	t.Error("length should equal", expect, "actual", actual)
-	//}
 }
 
 func TestBtree_Contains(t *testing.T) {
@@ -88,135 +65,137 @@ func TestBtree_String(t *testing.T) {
 	}
 }
 
-//func TestIterateBtree(t *testing.T) {
-//	const capacity = 3
-//	btree := btree123()
-//
-//	var b [capacity]int
-//	btree.Ascend(func(n *Node, i int) bool {
-//		b[i] = n.Value.(int)
-//		return true
-//	})
-//	c := [capacity]int{1, 2, 3}
-//	if !reflect.DeepEqual(c , b) {
-//		t.Error(c, "should equal", b)
-//	}
-//
-//	btree.Descend(func(n *Node, i int) bool {
-//		b[i] = n.Value.(int)
-//		return true
-//	})
-//	d := [capacity]int{3, 2, 1}
-//	if !reflect.DeepEqual(b , d) {
-//		t.Error(b, "should equal", d)
-//	}
-//
-//	l := btree.Values()
-//	for i, v := range l {
-//		if c[i] != v {
-//			t.Error(c[i], "should equal", v)
-//		}
-//	}
-//}
+func TestBtree_Values(t *testing.T) {
+	const capacity = 3
+	btree := btreeFixed([]interface{}{1,2})
 
-//func TestRemoveBtree(t *testing.T) {
-//	btree := btree123()
-//	test := []interface{}{1, 2, 3}
-//	if !btree.ContainsAll(test) {
-//		t.Error("tree should contain all of", test)
-//	}
-//	if !btree.ContainsAny(test) {
-//		t.Error("tree should contain one of", test)
-//	}
-//
-//	btree.DeleteAll(test)
-//
-//	if !btree.Empty() {
-//		t.Error("tree should be empty")
-//	}
-//	if btree.ContainsAny(test) {
-//		t.Error("tree should not contain any of", test)
-//	}
-//	btree.Init()
-//	if btree.Contains(1) ||  btree.Get(1) != nil {
-//		t.Error("tree should be empty")
-//	}
-//
-//	btree = btree123()
-//	pop := btree.Pop()
-//	if pop != 3 {
-//		t.Error(pop, "should be 3")
-//	}
-//	pull := btree.Pull()
-//	if pull != 1 {
-//		t.Error(pop, "should be 3")
-//	}
-//	if !btree.Delete(btree.Pop()).Empty() {
-//		t.Error("tree should be empty")
-//	}
-//}
+	b := btree.Values()
+	c := []interface{}{1, 2}
+	if !reflect.DeepEqual(c , b) {
+		t.Error(c, "should equal", b)
+	}
+	btree.Insert(3)
 
-//type TestKey1 struct {
-//	Name string
-//}
-//func (testkey TestKey1) Comp(val interface{}) int {
-//	var c int = 0
-//	tk := val.(TestKey1)
-//	if testkey.Name > tk.Name {
-//		c = 1
-//	} else if testkey.Name < tk.Name {
-//		c = -1
-//	}
-//	return c
-//}
-//type TestKey2 struct {
-//	Name string
-//}
-//func (testkey TestKey2) String() string {
-//	return testkey.Name
-//}
-//
-//func TestCustomKeyBtree(t *testing.T) {
-//	btree := New()
-//	btree.InsertAll([]interface{}{TestKey1{Name: "Ross"}, TestKey1{Name: "Michael"},
-//		TestKey1{Name: "Angelo"}, TestKey1{Name: "Jason"}})
-//
-//	rootName := btree.root.Value.(TestKey1).Name
-//	if btree.root.Value.(TestKey1).Name != "Michael" {
-//		t.Error(rootName, "should equal Michael")
-//	}
-//	btree.Init()
-//	btree.InsertAll([]interface{}{TestKey2{Name: "Ross"}, TestKey2{Name: "Michael"},
-//		TestKey2{Name: "Angelo"}, TestKey2{Name: "Jason"}})
-//	btree.Debug()
-//	s := btree.String()
-//	test := "[Angelo Jason Michael Ross]"
-//	if s != test {
-//		t.Error(s, "should equal", test)
-//	}
-//
-//	btree.Delete(TestKey2{Name: "Michael"})
-//	if btree.Len() != 3 {
-//		t.Error("tree length should be 3")
-//	}
-//	test = "Jason"
-//	if btree.root.Value.(TestKey2).Name != test {
-//		t.Error(btree.root.Value, "root of the tree should be", test)
-//	}
-//	for !btree.Empty() {
-//		btree.Delete(btree.root.Value)
-//	}
-//	btree.Debug()
-//}
-//
-//func TestCustomDuplicatesBtree(t *testing.T) {
-//	btree := New()
-//	btree.InsertAll([]interface{}{0, 2, 5, 10, 15, 20, 12, 14, 13, 25, 0, 2, 5, 10, 15, 20, 12, 14, 13, 25})
-//	test := 10
-//	if btree.Len() != 10 {
-//		t.Error("tree length should be", test)
-//	}
-//}
+	desc := [capacity]int{}
+	btree.Descend(func(n *Node, i int) bool {
+		desc[i] = n.Value.(int)
+		return true
+	})
+	d := [capacity]int{3, 2, 1}
+	if !reflect.DeepEqual(desc , d) {
+		t.Error(desc, "should equal", d)
+	}
+
+	e := []interface{}{1, 2, 3}
+	for i, v := range btree.Values() {
+		if e[i] != v {
+			t.Error(e[i], "should equal", v)
+		}
+	}
+}
+
+func TestBtree_Delete(t *testing.T) {
+	test := []interface{}{1, 2, 3}
+	btree := btreeFixed(test)
+
+	btree.DeleteAll(test)
+
+	if !btree.Empty() {
+		t.Error("tree should be empty")
+	}
+
+	btree = btreeFixed(test)
+	pop := btree.Pop()
+	if pop != 3 {
+		t.Error(pop, "should be 3")
+	}
+	pull := btree.Pull()
+	if pull != 1 {
+		t.Error(pop, "should be 3")
+	}
+	if !btree.Delete(btree.Pop()).Empty() {
+		t.Error("tree should be empty")
+	}
+	btree.Pop()
+	btree.Pull()
+}
+
+func TestBtree_HeadTail(t *testing.T) {
+	btree := btreeFixed([]interface{}{1, 2, 3})
+	if btree.Head() != 1 {
+		t.Error("head element should be 1")
+	}
+	if btree.Tail() != 3 {
+		t.Error("head element should be 3")
+	}
+	btree.Init()
+	if btree.Head() != nil {
+		t.Error("head element should be nil")
+	}
+}
+
+type TestKey1 struct {
+	Name string
+}
+func (testkey TestKey1) Comp(val interface{}) int8 {
+	var c int8 = 0
+	tk := val.(TestKey1)
+	if testkey.Name > tk.Name {
+		c = 1
+	} else if testkey.Name < tk.Name {
+		c = -1
+	}
+	return c
+}
+type TestKey2 struct {
+	Name string
+}
+func (testkey TestKey2) String() string {
+	return testkey.Name
+}
+
+func TestBtree_CustomKey(t *testing.T) {
+	btree := New()
+	btree.InsertAll([]interface{}{TestKey1{Name: "Ross"}, TestKey1{Name: "Michael"},
+		TestKey1{Name: "Angelo"}, TestKey1{Name: "Jason"}})
+
+	rootName := btree.root.Value.(TestKey1).Name
+	if btree.root.Value.(TestKey1).Name != "Michael" {
+		t.Error(rootName, "should equal Michael")
+	}
+	btree.Init()
+	btree.InsertAll([]interface{}{TestKey2{Name: "Ross"}, TestKey2{Name: "Michael"},
+		TestKey2{Name: "Angelo"}, TestKey2{Name: "Jason"}})
+	btree.Debug()
+	s := btree.String()
+	test := "[Angelo Jason Michael Ross]"
+	if s != test {
+		t.Error(s, "should equal", test)
+	}
+
+	btree.Delete(TestKey2{Name: "Michael"})
+	if btree.Len() != 3 {
+		t.Error("tree length should be 3")
+	}
+	test = "Jason"
+	if btree.root.Value.(TestKey2).Name != test {
+		t.Error(btree.root.Value, "root of the tree should be", test)
+	}
+	for !btree.Empty() {
+		btree.Delete(btree.root.Value)
+	}
+	btree.Debug()
+}
+
+func TestBtree_Duplicates(t *testing.T) {
+	btree := New()
+	btree.InsertAll([]interface{}{0, 2, 5, 10, 15, 20, 12, 14, 13, 25, 0, 2, 5, 10, 15, 20, 12, 14, 13, 25})
+	test := 10
+	len := btree.Len()
+	if len != test {
+		t.Error(len, "tree length should be", test)
+	}
+}
 
 // benchmark tests comparing google btree
 
@@ -280,9 +259,10 @@ func BenchmarkGetGtree(b *testing.B)  {
 
 func BenchmarkIterationBtree(b *testing.B)  {
 	for i := 0; i < b.N; i++ {
-		bt.Ascend(func(n *Node, i int) bool {
-			return true
-		})
+		length := len(bt.Values())
+		for i := 0; i < length; i++ {
+			if bt.values[i] != nil {}
+		}
 	}
 }
 
@@ -291,6 +271,18 @@ func BenchmarkIterationGtree(b *testing.B)  {
 		gt.Ascend(func(a gtree.Item) bool {
 			return true
 		})
+	}
+}
+
+func BenchmarkLenBtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		bt.Len()
+	}
+}
+
+func BenchmarkLenGtree(b *testing.B)  {
+	for i := 0; i < b.N; i++ {
+		gt.Len()
 	}
 }
 
