@@ -168,8 +168,9 @@ func (t *Btree) Tail() interface{} {
 
 func (t *Btree) Values() []interface{} {
 	if t.values == nil {
+		t.values = make([]interface{}, t.len)
 		t.Ascend(func(n *Node, i int) bool {
-			t.values = append(t.values, n.Value)
+			t.values[i] = n.Value
 			return true
 		})
 	}
