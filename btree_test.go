@@ -1,4 +1,4 @@
-package tree
+package go_tree
 
 import (
 	"testing"
@@ -191,9 +191,9 @@ func TestBtree_Duplicates(t *testing.T) {
 	btree := New()
 	btree.InsertAll([]interface{}{0, 2, 5, 10, 15, 20, 12, 14, 13, 25, 0, 2, 5, 10, 15, 20, 12, 14, 13, 25})
 	test := 10
-	len := btree.Len()
-	if len != test {
-		t.Error(len, "tree length should be", test)
+	length := btree.Len()
+	if length != test {
+		t.Error(length, "tree length should be", test)
 	}
 }
 

@@ -1,4 +1,4 @@
-package tree
+package go_tree
 
 import (
 	"fmt"
