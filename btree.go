@@ -8,11 +8,14 @@ type Btree struct {
 	root *Node
 	values []interface{}
 	len int
+	compare Comp
 }
 
-type Comparer interface {
+type CompareTo interface {
 	Comp(val interface{}) int8
 }
+
+type Comp func(v1, v2 interface{}) int8
 
 type Node struct {
 	Value interface{}
@@ -21,11 +24,37 @@ type Node struct {
 }
 
 func New() *Btree { return new(Btree).Init() }
+func NewInt() *Btree { return new(Btree).InitWithCompare(intComp) }
+func NewString() *Btree { return new(Btree).InitWithCompare(stringComp) }
+func NewUint() *Btree { return new(Btree).InitWithCompare(uintComp) }
+func NewFloat32() *Btree { return new(Btree).InitWithCompare(float32Comp) }
+func NewFloat64() *Btree { return new(Btree).InitWithCompare(float64Comp) }
+func NewUintptr() *Btree { return new(Btree).InitWithCompare(uintptrComp) }
+func NewRune() *Btree { return new(Btree).InitWithCompare(runeComp) }
+func NewByte() *Btree { return new(Btree).InitWithCompare(byteComp) }
+func NewComplex64() *Btree { return new(Btree).InitWithCompare(complex64Comp) }
+func NewComplex128() *Btree { return new(Btree).InitWithCompare(complex128Comp) }
+func NewStringPtr() *Btree { return new(Btree).InitWithCompare(stringPtrComp) }
+func NewUintPtr() *Btree { return new(Btree).InitWithCompare(uintPtrComp) }
+func NewIntPtr() *Btree { return new(Btree).InitWithCompare(intPtrComp) }
+func NewBytePtr() *Btree { return new(Btree).InitWithCompare(bytePtrComp) }
+func NewRunePtr() *Btree { return new(Btree).InitWithCompare(runePtrComp) }
+func NewFloat32Ptr() *Btree { return new(Btree).InitWithCompare(float32PtrComp) }
+func NewFloat64Ptr() *Btree { return new(Btree).InitWithCompare(float64PtrComp) }
+func NewComplex32Ptr() *Btree { return new(Btree).InitWithCompare(complex32PtrComp) }
+func NewComplex64Ptr() *Btree { return new(Btree).InitWithCompare(complex64PtrComp) }
 
 func (t *Btree) Init() *Btree {
 	t.root = nil
 	t.values = nil
 	t.len = 0
+	t.compare = comp
+	return t
+}
+
+func (t *Btree) InitWithCompare(compare Comp) *Btree {
+	t.Init()
+	t.compare = compare
 	return t
 }
 
@@ -50,22 +79,22 @@ func (t *Btree) balance() int8 {
 
 func (t *Btree) Insert(value interface{}) *Btree {
 	added := false
-	t.root = insert(t.root, value, &added)
+	t.root = insert(t.root, value, &added, t.compare)
 	if added { t.len += 1 }
 	t.values = nil
 	return t
 }
 
-func insert(n *Node, value interface{}, added *bool) *Node {
+func insert(n *Node, value interface{}, added *bool, compare Comp) *Node {
 	if n == nil {
 		*added = true
 		return (&Node{Value: value}).Init()
 	} else {
-		c := Comp(value, n.Value)
+		c := compare(value, n.Value)
 		if c > 0 {
-			n.right = insert(n.right, value, added)
+			n.right = insert(n.right, value, added, compare)
 		} else if c < 0 {
-			n.left = insert(n.left, value, added)
+			n.left = insert(n.left, value, added, compare)
 		} else {
 			n.Value = value
 			*added = false
@@ -76,7 +105,7 @@ func insert(n *Node, value interface{}, added *bool) *Node {
 		c = balance(n)
 
 		if c > 1 {
-			c = Comp(value, n.left.Value)
+			c = compare(value, n.left.Value)
 			if c < 0 {
 				return n.rotateRight()
 			} else if c > 0 {
@@ -84,7 +113,7 @@ func insert(n *Node, value interface{}, added *bool) *Node {
 				return n.rotateRight()
 			}
 		} else if c < -1 {
-			c = Comp(value, n.right.Value)
+			c = compare(value, n.right.Value)
 			if c > 0 {
 				return n.rotateLeft()
 			} else if c < 0 {
@@ -124,7 +153,7 @@ func (t *Btree) ContainsAll(values []interface{}) bool {
 func (t *Btree) Get(value interface{}) interface{} {
 	var node *Node = nil
 	if t.root != nil {
-		node = t.root.get(value)
+		node = t.root.get(value, t.compare)
 	}
 	if node != nil {
 		return node.Value
@@ -179,7 +208,7 @@ func (t *Btree) Values() []interface{} {
 
 func (t *Btree) Delete(value interface{}) *Btree {
 	deleted := false
-	t.root = deleteNode(t.root, value, &deleted)
+	t.root = deleteNode(t.root, value, &deleted, t.compare)
 	if deleted { t.len -= 1 }
 	t.values = nil
 	return t
@@ -192,15 +221,15 @@ func (t *Btree) DeleteAll(values []interface{}) *Btree {
 	return t
 }
 
-func deleteNode(n *Node, value interface{}, deleted *bool) *Node {
+func deleteNode(n *Node, value interface{}, deleted *bool, compare Comp) *Node {
 	if n == nil { return n }
 
-	c := Comp(value, n.Value)
+	c := compare(value, n.Value)
 
 	if c < 0 {
-		n.left = deleteNode(n.left, value, deleted)
+		n.left = deleteNode(n.left, value, deleted, compare)
 	} else if c > 0 {
-		n.right = deleteNode(n.right, value, deleted)
+		n.right = deleteNode(n.right, value, deleted, compare)
 	} else {
 		if n.left == nil {
 			t := n.right
@@ -213,7 +242,7 @@ func deleteNode(n *Node, value interface{}, deleted *bool) *Node {
 		}
 		t := n.right.min()
 		n.Value = t.Value
-		n.right = deleteNode(n.right, t.Value, deleted)
+		n.right = deleteNode(n.right, t.Value, deleted, compare)
 		*deleted = true
 	}
 
@@ -271,7 +300,7 @@ func (t *Btree) Debug() {
 	} else { fmt.Println(t.Len(), "elements") }
 
 	t.Ascend(func(n *Node, i int) bool {
-		if Comp(t.root.Value, n.Value) == 0 {
+		if t.root.Value == n.Value {
 			fmt.Print("ROOT ** ")
 		}
 		n.Debug()
@@ -318,13 +347,13 @@ func balance(n *Node) int8 {
 	return height(n.left) - height(n.right)
 }
 
-func (n *Node) get(val interface{}) *Node {
+func (n *Node) get(val interface{}, compare Comp) *Node {
 	var node *Node = nil
-	c := Comp(val, n.Value)
+	c := compare(val, n.Value)
 	if c < 0 {
-		if n.left != nil { node = n.left.get(val) }
+		if n.left != nil { node = n.left.get(val, compare) }
 	} else if c > 0 {
-		if n.right != nil { node = n.right.get(val) }
+		if n.right != nil { node = n.right.get(val, compare) }
 	} else {
 		node = n
 	}
@@ -388,75 +417,88 @@ func (n *Node) maxHeight() int8 {
 	return lh
 }
 
-func Comp(v1, v2 interface{}) int8  {
-	var c int8 = 0
+func intComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(int), v2.(int)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func stringComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(string), v2.(string)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func uintComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(uint), v2.(uint)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func float32Comp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(float32), v2.(float32)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func float64Comp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(float64), v2.(float64)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func uintptrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(uintptr), v2.(uintptr)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func byteComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(byte), v2.(byte)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func runeComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(rune), v2.(rune)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func complex64Comp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(float64), v2.(float64)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func complex128Comp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(float64), v2.(float64)
+	if t1 > t2 { return 1 } else if t1 < t2 { return -1 } else { return 0 }
+}
+func stringPtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*string), v2.(*string)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func intPtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*int), v2.(*int)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func uintPtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*uint), v2.(*uint)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func bytePtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*byte), v2.(*byte)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func runePtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*rune), v2.(*rune)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func float32PtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*float32), v2.(*float32)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func float64PtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*float64), v2.(*float64)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func complex32PtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*float64), v2.(*float64)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
+func complex64PtrComp(v1, v2 interface{}) int8 {
+	t1, t2 := v1.(*float64), v2.(*float64)
+	if *t1 > *t2 { return 1 } else if *t1 < *t2 { return -1 } else { return 0 }
+}
 
+func comp(v1, v2 interface{}) int8  {
+	var c int8 = 0
 	switch v1.(type) {
-	default:
-		t1, t2 := v1.(string), v2.(string)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case int:
-		t1, t2 := v1.(int), v2.(int)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case string:
-		t1, t2 := v1.(string), v2.(string)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case uint:
-		t1, t2 := v1.(uint), v2.(uint)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case float32:
-		t1, t2 := v1.(float32), v2.(float32)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case float64:
-		t1, t2 := v1.(float64), v2.(float64)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case uintptr:
-		t1, t2 := v1.(uintptr), v2.(uintptr)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case byte:
-		t1, t2 := v1.(byte), v2.(byte)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case rune:
-		t1, t2 := v1.(rune), v2.(rune)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case complex64:
-		t1, t2 := v1.(float64), v2.(float64)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case complex128:
-		t1, t2 := v1.(float64), v2.(float64)
-		if t1 > t2 { c = 1 } else if t1 < t2 { c = -1 } else { c = 0 }
-	case *string:
-		t1, t2 := v1.(*string), v2.(*string)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *int:
-		t1, t2 := v1.(*int), v2.(*int)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *uint:
-		t1, t2 := v1.(*uint), v2.(*uint)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *float32:
-		t1, t2 := v1.(*float32), v2.(*float32)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *float64:
-		t1, t2 := v1.(*float64), v2.(*float64)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *uintptr:
-		t1, t2 := v1.(*uintptr), v2.(*uintptr)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *byte:
-		t1, t2 := v1.(*byte), v2.(*byte)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *rune:
-		t1, t2 := v1.(*rune), v2.(*rune)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *complex64:
-		t1, t2 := v1.(*float64), v2.(*float64)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case *complex128:
-		t1, t2 := v1.(*float64), v2.(*float64)
-		if *t1 > *t2 { c = 1 } else if *t1 < *t2 { c = -1 } else { c = 0 }
-	case Comparer:
-		c = v1.(Comparer).Comp(v2)
+	case CompareTo:
+		c = v1.(CompareTo).Comp(v2)
 	case fmt.Stringer:
 		s1, s2 := v1.(fmt.Stringer).String(), v2.(fmt.Stringer).String()
 		if s1 > s2 { c = 1 } else if s1 < s2 { c = -1 } else { c = 0 }

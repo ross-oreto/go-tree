@@ -9,7 +9,7 @@ import (
 )
 
 func btreeInOrder(n int) *Btree {
-	btree := New()
+	btree := NewInt()
 	for i := 1; i <= n; i++ {
 		btree.Insert(i)
 	}
@@ -17,7 +17,7 @@ func btreeInOrder(n int) *Btree {
 }
 
 func btreeFixed(values []interface{}) *Btree {
-	btree := New()
+	btree := NewInt()
 	btree.InsertAll(values)
 	return btree
 }
@@ -35,7 +35,17 @@ func TestBtree_Get(t *testing.T) {
 	}
 
 	expect = 2
-	if btree.Get(expect) == nil {
+	if btree.Get(expect) != expect {
+		t.Error("value should equal", expect)
+	}
+}
+
+func TestBtreeString_Get(t *testing.T) {
+	tree := NewString()
+	tree.Insert("Oreto").Insert("Michael").Insert("Ross")
+
+	expect := "Ross"
+	if tree.Get(expect) != expect {
 		t.Error("value should equal", expect)
 	}
 }
@@ -188,7 +198,7 @@ func TestBtree_CustomKey(t *testing.T) {
 }
 
 func TestBtree_Duplicates(t *testing.T) {
-	btree := New()
+	btree := NewInt()
 	btree.InsertAll([]interface{}{0, 2, 5, 10, 15, 20, 12, 14, 13, 25, 0, 2, 5, 10, 15, 20, 12, 14, 13, 25})
 	test := 10
 	length := btree.Len()
@@ -204,7 +214,7 @@ var gt *gtree.BTree
 var btPerm []int
 
 func BenchmarkInsertBtree(b *testing.B)  {
-	btree := New()
+	btree := NewInt()
 	for i := 0; i < b.N; i++ {
 		for i := 0; i < benchLen; i++ {
 			btree.Insert(i)
@@ -222,7 +232,7 @@ func BenchmarkInsertGtree(b *testing.B)  {
 }
 
 func BenchmarkInsertRandomBtree(b *testing.B)  {
-	bt = New()
+	bt = NewInt()
 	btPerm = rand.Perm(benchLen)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -286,8 +296,15 @@ func BenchmarkLenGtree(b *testing.B)  {
 	}
 }
 
+const benchDeleteLength = 100000
 func BenchmarkDeleteBtree(b *testing.B)  {
+	bt.Init()
+	btPerm = rand.Perm(benchDeleteLength)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			bt.Insert(v)
+		}
 		for _, v := range btPerm {
 			bt.Delete(v)
 		}
@@ -295,7 +312,12 @@ func BenchmarkDeleteBtree(b *testing.B)  {
 }
 
 func BenchmarkDeleteGtree(b *testing.B)  {
+	gt = gtree.New(*btreeDegree)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		for _, v := range btPerm {
+			gt.ReplaceOrInsert(gtree.Int(v))
+		}
 		for _, v := range btPerm {
 			gt.Delete(gtree.Int(v))
 		}
