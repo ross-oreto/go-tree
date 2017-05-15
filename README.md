@@ -13,7 +13,7 @@ import (
 	"github.com/ross-oreto/go-tree"
 )
 
-tree := tree.NewString()
+tree := container.NewString()
 tree.Insert('Oreto').Insert('Michael').Insert('Ross')
 fmt.Println(tree.Values())
 ```
