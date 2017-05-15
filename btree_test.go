@@ -158,7 +158,7 @@ type TestKey1 struct {
 }
 
 func (testkey TestKey1) Comp(val interface{}) int8 {
-	var c int8 = 0
+	var c int8
 	tk := val.(TestKey1)
 	if testkey.Name > tk.Name {
 		c = 1
