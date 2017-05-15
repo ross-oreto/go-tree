@@ -18,7 +18,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- */
+*/
 
 package tree
 
@@ -50,43 +50,62 @@ type Node struct {
 }
 
 // New returns a new btree which expects types that implement the CompareTo or Stringer Interfaces
-func New() *Btree             { return new(Btree).Init() }
+func New() *Btree { return new(Btree).Init() }
+
 // NewInt returns a new btree which expects int types
-func NewInt() *Btree          { return new(Btree).InitWithCompare(intComp) }
+func NewInt() *Btree { return new(Btree).InitWithCompare(intComp) }
+
 // NewString returns a new btree which expects string types
-func NewString() *Btree       { return new(Btree).InitWithCompare(stringComp) }
+func NewString() *Btree { return new(Btree).InitWithCompare(stringComp) }
+
 // NewUint returns a new btree which expects uint types
-func NewUint() *Btree         { return new(Btree).InitWithCompare(uintComp) }
+func NewUint() *Btree { return new(Btree).InitWithCompare(uintComp) }
+
 // NewFloat32 returns a new btree which expects float32 types
-func NewFloat32() *Btree      { return new(Btree).InitWithCompare(float32Comp) }
+func NewFloat32() *Btree { return new(Btree).InitWithCompare(float32Comp) }
+
 // NewFloat64 returns a new btree which expects float32 types
-func NewFloat64() *Btree      { return new(Btree).InitWithCompare(float64Comp) }
+func NewFloat64() *Btree { return new(Btree).InitWithCompare(float64Comp) }
+
 // NewUintptr returns a new btree which expects uintptr types
-func NewUintptr() *Btree      { return new(Btree).InitWithCompare(uintptrComp) }
+func NewUintptr() *Btree { return new(Btree).InitWithCompare(uintptrComp) }
+
 // NewRune returns a new btree which expects rune types
-func NewRune() *Btree         { return new(Btree).InitWithCompare(runeComp) }
+func NewRune() *Btree { return new(Btree).InitWithCompare(runeComp) }
+
 // NewByte returns a new btree which expects byte types
-func NewByte() *Btree         { return new(Btree).InitWithCompare(byteComp) }
+func NewByte() *Btree { return new(Btree).InitWithCompare(byteComp) }
+
 // NewComplex64 returns a new btree which expects complex64 types
-func NewComplex64() *Btree    { return new(Btree).InitWithCompare(complex64Comp) }
+func NewComplex64() *Btree { return new(Btree).InitWithCompare(complex64Comp) }
+
 // NewComplex128 returns a new btree which expects complex128 types
-func NewComplex128() *Btree   { return new(Btree).InitWithCompare(complex128Comp) }
+func NewComplex128() *Btree { return new(Btree).InitWithCompare(complex128Comp) }
+
 // NewStringPtr returns a new btree which expects *string types
-func NewStringPtr() *Btree    { return new(Btree).InitWithCompare(stringPtrComp) }
+func NewStringPtr() *Btree { return new(Btree).InitWithCompare(stringPtrComp) }
+
 // NewUintPtr returns a new btree which expects *uint types
-func NewUintPtr() *Btree      { return new(Btree).InitWithCompare(uintPtrComp) }
+func NewUintPtr() *Btree { return new(Btree).InitWithCompare(uintPtrComp) }
+
 // NewIntPtr returns a new btree which expects *int types
-func NewIntPtr() *Btree       { return new(Btree).InitWithCompare(intPtrComp) }
+func NewIntPtr() *Btree { return new(Btree).InitWithCompare(intPtrComp) }
+
 // NewBytePtr returns a new btree which expects *byte types
-func NewBytePtr() *Btree      { return new(Btree).InitWithCompare(bytePtrComp) }
+func NewBytePtr() *Btree { return new(Btree).InitWithCompare(bytePtrComp) }
+
 // NewRunePtr returns a new btree which expects *rune types
-func NewRunePtr() *Btree      { return new(Btree).InitWithCompare(runePtrComp) }
+func NewRunePtr() *Btree { return new(Btree).InitWithCompare(runePtrComp) }
+
 // NewFloat32Ptr returns a new btree which expects *flost32 types
-func NewFloat32Ptr() *Btree   { return new(Btree).InitWithCompare(float32PtrComp) }
+func NewFloat32Ptr() *Btree { return new(Btree).InitWithCompare(float32PtrComp) }
+
 // NewFloat64Ptr returns a new btree which expects *flost64 types
-func NewFloat64Ptr() *Btree   { return new(Btree).InitWithCompare(float64PtrComp) }
+func NewFloat64Ptr() *Btree { return new(Btree).InitWithCompare(float64PtrComp) }
+
 // NewComplex32Ptr returns a new btree which expects *complex32 types
 func NewComplex32Ptr() *Btree { return new(Btree).InitWithCompare(complex32PtrComp) }
+
 // NewComplex64Ptr returns a new btree which expects *complex64 types
 func NewComplex64Ptr() *Btree { return new(Btree).InitWithCompare(complex64PtrComp) }
 
