@@ -13,24 +13,24 @@ import (
 	"github.com/ross-oreto/go-tree"
 )
 
-tree := container.NewString()
-tree.Insert('Oreto').Insert('Michael').Insert('Ross')
-fmt.Println(tree.Values())
+btree := tree.NewString()
+btree.Insert('Oreto').Insert('Michael').Insert('Ross')
+fmt.Println(btree.Values())
 ```
 
 #### Retrieve
 ```
-tree.Get('Ross')
+btree.Get('Ross')
 ```
 
 #### Delete
 ```
-tree.Delete('Ross')
+btree.Delete('Ross')
 ```
 
 #### Clear
 ```
-tree.Init()
+btree.Init()
 ```
 
 #### Custom Values
