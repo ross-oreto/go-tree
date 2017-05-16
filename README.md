@@ -1,7 +1,7 @@
 ### GO tree
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/ross-oreto/go-tree/master/LICENSE)
 [![Build Status](https://travis-ci.org/ross-oreto/go-tree.svg?branch=master)](https://travis-ci.org/ross-oreto/go-tree)
-[![](https://goreportcard.com/badge/github.com/ross-oreto/go-tree)](https://goreportcard.com/badge/github.com/ross-oreto/go-tree)
+[![Go Report Card](https://goreportcard.com/badge/ross-oreto/go-tree)](https://goreportcard.com/report/ross-oreto/go-tree)
 [![GoDoc](https://godoc.org/github.com/ross-oreto/go-tree?status.svg)](https://godoc.org/github.com/ross-oreto/go-tree)
 
 
