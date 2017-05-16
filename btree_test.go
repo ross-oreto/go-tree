@@ -225,7 +225,7 @@ var bt *Btree
 var gt *gtree.BTree
 var btPerm []int
 
-func BenchmarkInsertBtree(b *testing.B) {
+func BenchmarkBtree_Insert(b *testing.B) {
 	btree := NewInt()
 	for i := 0; i < b.N; i++ {
 		for i := 0; i < benchLen; i++ {
@@ -234,7 +234,7 @@ func BenchmarkInsertBtree(b *testing.B) {
 	}
 }
 
-func BenchmarkInsertGtree(b *testing.B) {
+func BenchmarkGtree_Insert(b *testing.B) {
 	btree := gtree.New(*btreeDegree)
 	for i := 0; i < b.N; i++ {
 		for i := gtree.Int(0); i < benchLen; i++ {
@@ -243,7 +243,7 @@ func BenchmarkInsertGtree(b *testing.B) {
 	}
 }
 
-func BenchmarkInsertRandomBtree(b *testing.B) {
+func BenchmarkBtree_InsertRandom(b *testing.B) {
 	bt = NewInt()
 	btPerm = rand.Perm(benchLen)
 	b.ResetTimer()
@@ -254,7 +254,7 @@ func BenchmarkInsertRandomBtree(b *testing.B) {
 	}
 }
 
-func BenchmarkInsertRandomGtree(b *testing.B) {
+func BenchmarkGtree_InsertRandom(b *testing.B) {
 	gt = gtree.New(*btreeDegree)
 	for i := 0; i < b.N; i++ {
 		for _, v := range btPerm {
@@ -263,7 +263,7 @@ func BenchmarkInsertRandomGtree(b *testing.B) {
 	}
 }
 
-func BenchmarkGetBtree(b *testing.B) {
+func BenchmarkBtree_Get(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, v := range btPerm {
 			bt.Get(v)
@@ -271,7 +271,7 @@ func BenchmarkGetBtree(b *testing.B) {
 	}
 }
 
-func BenchmarkGetGtree(b *testing.B) {
+func BenchmarkGtree_Get(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, v := range btPerm {
 			gt.Get(gtree.Int(v))
@@ -279,7 +279,7 @@ func BenchmarkGetGtree(b *testing.B) {
 	}
 }
 
-func BenchmarkIterationBtree(b *testing.B) {
+func BenchmarkBtree_Iteration(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		length := len(bt.Values())
 		for i := 0; i < length; i++ {
@@ -289,7 +289,7 @@ func BenchmarkIterationBtree(b *testing.B) {
 	}
 }
 
-func BenchmarkIterationGtree(b *testing.B) {
+func BenchmarkGtree_Iteration(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		gt.Ascend(func(a gtree.Item) bool {
 			return true
@@ -297,13 +297,13 @@ func BenchmarkIterationGtree(b *testing.B) {
 	}
 }
 
-func BenchmarkLenBtree(b *testing.B) {
+func BenchmarkBtree_Len(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		bt.Len()
 	}
 }
 
-func BenchmarkLenGtree(b *testing.B) {
+func BenchmarkGtree_Len(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		gt.Len()
 	}
@@ -311,7 +311,7 @@ func BenchmarkLenGtree(b *testing.B) {
 
 const benchDeleteLength = 100000
 
-func BenchmarkDeleteBtree(b *testing.B) {
+func BenchmarkBtree_Delete(b *testing.B) {
 	bt.Init()
 	btPerm = rand.Perm(benchDeleteLength)
 	b.ResetTimer()
@@ -325,7 +325,7 @@ func BenchmarkDeleteBtree(b *testing.B) {
 	}
 }
 
-func BenchmarkDeleteGtree(b *testing.B) {
+func BenchmarkGtree_Delete(b *testing.B) {
 	gt = gtree.New(*btreeDegree)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
