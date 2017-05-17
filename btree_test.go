@@ -221,8 +221,8 @@ var btPerm []int
 func BenchmarkBtree_Insert(b *testing.B) {
 	btree := New()
 	for i := 0; i < b.N; i++ {
-		for i := 0; i < benchLen; i++ {
-			btree.Insert(IntVal(i))
+		for i := IntVal(i); i < benchLen; i++ {
+			btree.Insert(i)
 		}
 	}
 }
