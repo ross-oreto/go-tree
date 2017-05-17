@@ -457,7 +457,7 @@ func (n *Node) maxHeight() int8 {
 // IntVal represents an integer tree val
 type IntVal int
 
-// Comp defines the compare method for int values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i IntVal) Comp(val Val) int8 {
 	v := val.(IntVal)
 	if i > v {
@@ -472,7 +472,7 @@ func (i IntVal) Comp(val Val) int8 {
 // StringVal represents an string tree val
 type StringVal string
 
-// Comp defines the compare method for string values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i StringVal) Comp(val Val) int8 {
 	v := val.(StringVal)
 	if i > v {
@@ -487,7 +487,7 @@ func (i StringVal) Comp(val Val) int8 {
 // UintVal represents an uint tree val
 type UintVal uint
 
-// Comp defines the compare method for uint values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i UintVal) Comp(val Val) int8 {
 	v := val.(UintVal)
 	if i > v {
@@ -502,7 +502,7 @@ func (i UintVal) Comp(val Val) int8 {
 // Float32Val represents an float32 tree val
 type Float32Val float32
 
-// Comp defines the compare method for float32 values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i Float32Val) Comp(val Val) int8 {
 	v := val.(Float32Val)
 	if i > v {
@@ -517,7 +517,7 @@ func (i Float32Val) Comp(val Val) int8 {
 // Float64Val represents an float64 tree val
 type Float64Val float64
 
-// Comp defines the compare method for float64 values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i Float64Val) Comp(val Val) int8 {
 	v := val.(Float64Val)
 	if i > v {
@@ -532,7 +532,7 @@ func (i Float64Val) Comp(val Val) int8 {
 // UintptrVal represents a uintptr tree val
 type UintptrVal uintptr
 
-// Comp defines the compare method for uintptr values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i UintptrVal) Comp(val Val) int8 {
 	v := val.(UintptrVal)
 	if i > v {
@@ -547,7 +547,7 @@ func (i UintptrVal) Comp(val Val) int8 {
 // RuneVal represents a rune tree val
 type RuneVal rune
 
-// Comp defines the compare method for rune values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i RuneVal) Comp(val Val) int8 {
 	v := val.(RuneVal)
 	if i > v {
@@ -562,7 +562,7 @@ func (i RuneVal) Comp(val Val) int8 {
 // ByteVal represents a byte tree val
 type ByteVal byte
 
-// Comp defines the compare method for byte values
+// Comp returns 1 if i > val, -1 if i < val and 0 if i equal to val
 func (i ByteVal) Comp(val Val) int8 {
 	v := val.(ByteVal)
 	if i > v {

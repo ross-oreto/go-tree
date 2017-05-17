@@ -44,13 +44,13 @@ Values entered into the tree must implement the Val interface Comp method
 type TestKey1 struct {
 	Name string
 }
-
-func (testkey TestKey1) Comp(val Val) int8 {
+// Comp returns 1 if key > val, -1 if key < val and 0 if key equal to val
+func (key TestKey1) Comp(val Val) int8 {
 	var c int8
 	tk := val.(TestKey1)
-	if testkey.Name > tk.Name {
+	if key.Name > tk.Name {
 		c = 1
-	} else if testkey.Name < tk.Name {
+	} else if key.Name < tk.Name {
 		c = -1
 	}
 	return c
