@@ -6,100 +6,31 @@ import (
 
 // Btree represents an AVL tree
 type Btree struct {
-	root    *Node
-	values  []interface{}
-	len     int
-	compare Comp
+	root   *Node
+	values []Val
+	len    int
 }
 
-// CompareTo interface to define the compare method used to insert and find values
-type CompareTo interface {
-	Comp(val interface{}) int8
+// Val interface to define the compare method used to insert and find values
+type Val interface {
+	Comp(val Val) int8
 }
-
-// Comp compare function expressed as a type
-type Comp func(v1, v2 interface{}) int8
 
 // Node represents a node in the tree with a value, left and right children, and a height/balance of the node.
 type Node struct {
-	Value       interface{}
+	Value       Val
 	left, right *Node
 	height      int8
 }
 
-// New returns a new btree which expects types that implement the CompareTo or Stringer Interfaces
+// New returns a new btree which expects types that implement the Val or Stringer Interfaces
 func New() *Btree { return new(Btree).Init() }
-
-// NewInt returns a new btree which expects int types
-func NewInt() *Btree { return new(Btree).InitWithCompare(intComp) }
-
-// NewString returns a new btree which expects string types
-func NewString() *Btree { return new(Btree).InitWithCompare(stringComp) }
-
-// NewUint returns a new btree which expects uint types
-func NewUint() *Btree { return new(Btree).InitWithCompare(uintComp) }
-
-// NewFloat32 returns a new btree which expects float32 types
-func NewFloat32() *Btree { return new(Btree).InitWithCompare(float32Comp) }
-
-// NewFloat64 returns a new btree which expects float32 types
-func NewFloat64() *Btree { return new(Btree).InitWithCompare(float64Comp) }
-
-// NewUintptr returns a new btree which expects uintptr types
-func NewUintptr() *Btree { return new(Btree).InitWithCompare(uintptrComp) }
-
-// NewRune returns a new btree which expects rune types
-func NewRune() *Btree { return new(Btree).InitWithCompare(runeComp) }
-
-// NewByte returns a new btree which expects byte types
-func NewByte() *Btree { return new(Btree).InitWithCompare(byteComp) }
-
-// NewComplex64 returns a new btree which expects complex64 types
-func NewComplex64() *Btree { return new(Btree).InitWithCompare(complex64Comp) }
-
-// NewComplex128 returns a new btree which expects complex128 types
-func NewComplex128() *Btree { return new(Btree).InitWithCompare(complex128Comp) }
-
-// NewStringPtr returns a new btree which expects *string types
-func NewStringPtr() *Btree { return new(Btree).InitWithCompare(stringPtrComp) }
-
-// NewUintPtr returns a new btree which expects *uint types
-func NewUintPtr() *Btree { return new(Btree).InitWithCompare(uintPtrComp) }
-
-// NewIntPtr returns a new btree which expects *int types
-func NewIntPtr() *Btree { return new(Btree).InitWithCompare(intPtrComp) }
-
-// NewBytePtr returns a new btree which expects *byte types
-func NewBytePtr() *Btree { return new(Btree).InitWithCompare(bytePtrComp) }
-
-// NewRunePtr returns a new btree which expects *rune types
-func NewRunePtr() *Btree { return new(Btree).InitWithCompare(runePtrComp) }
-
-// NewFloat32Ptr returns a new btree which expects *flost32 types
-func NewFloat32Ptr() *Btree { return new(Btree).InitWithCompare(float32PtrComp) }
-
-// NewFloat64Ptr returns a new btree which expects *flost64 types
-func NewFloat64Ptr() *Btree { return new(Btree).InitWithCompare(float64PtrComp) }
-
-// NewComplex32Ptr returns a new btree which expects *complex32 types
-func NewComplex32Ptr() *Btree { return new(Btree).InitWithCompare(complex32PtrComp) }
-
-// NewComplex64Ptr returns a new btree which expects *complex64 types
-func NewComplex64Ptr() *Btree { return new(Btree).InitWithCompare(complex64PtrComp) }
 
 // Init initializes all values/clears the tree using the default compare method and returns the tree pointer
 func (t *Btree) Init() *Btree {
 	t.root = nil
 	t.values = nil
 	t.len = 0
-	t.compare = comp
-	return t
-}
-
-// InitWithCompare initializes all values/clears the tree using the specified compare method and returns the tree pointer
-func (t *Btree) InitWithCompare(compare Comp) *Btree {
-	t.Init()
-	t.compare = compare
 	return t
 }
 
@@ -126,9 +57,9 @@ func (t *Btree) balance() int8 {
 }
 
 // Insert inserts a new value into the tree and returns the tree pointer
-func (t *Btree) Insert(value interface{}) *Btree {
+func (t *Btree) Insert(value Val) *Btree {
 	added := false
-	t.root = insert(t.root, value, &added, t.compare)
+	t.root = insert(t.root, value, &added)
 	if added {
 		t.len++
 	}
@@ -136,16 +67,16 @@ func (t *Btree) Insert(value interface{}) *Btree {
 	return t
 }
 
-func insert(n *Node, value interface{}, added *bool, compare Comp) *Node {
+func insert(n *Node, value Val, added *bool) *Node {
 	if n == nil {
 		*added = true
 		return (&Node{Value: value}).Init()
 	}
-	c := compare(value, n.Value)
+	c := value.Comp(n.Value)
 	if c > 0 {
-		n.right = insert(n.right, value, added, compare)
+		n.right = insert(n.right, value, added)
 	} else if c < 0 {
-		n.left = insert(n.left, value, added, compare)
+		n.left = insert(n.left, value, added)
 	} else {
 		n.Value = value
 		*added = false
@@ -156,7 +87,7 @@ func insert(n *Node, value interface{}, added *bool, compare Comp) *Node {
 	c = balance(n)
 
 	if c > 1 {
-		c = compare(value, n.left.Value)
+		c = value.Comp(n.left.Value)
 		if c < 0 {
 			return n.rotateRight()
 		} else if c > 0 {
@@ -164,7 +95,7 @@ func insert(n *Node, value interface{}, added *bool, compare Comp) *Node {
 			return n.rotateRight()
 		}
 	} else if c < -1 {
-		c = compare(value, n.right.Value)
+		c = value.Comp(n.right.Value)
 		if c > 0 {
 			return n.rotateLeft()
 		} else if c < 0 {
@@ -176,7 +107,7 @@ func insert(n *Node, value interface{}, added *bool, compare Comp) *Node {
 }
 
 // InsertAll inserts all the values into the tree and returns the tree pointer
-func (t *Btree) InsertAll(values []interface{}) *Btree {
+func (t *Btree) InsertAll(values []Val) *Btree {
 	for _, v := range values {
 		t.Insert(v)
 	}
@@ -184,12 +115,12 @@ func (t *Btree) InsertAll(values []interface{}) *Btree {
 }
 
 // Contains returns true if the tree contains the specified value
-func (t *Btree) Contains(value interface{}) bool {
+func (t *Btree) Contains(value Val) bool {
 	return t.Get(value) != nil
 }
 
 // ContainsAny returns true if the tree contains any of the values
-func (t *Btree) ContainsAny(values []interface{}) bool {
+func (t *Btree) ContainsAny(values []Val) bool {
 	for _, v := range values {
 		if t.Contains(v) {
 			return true
@@ -199,7 +130,7 @@ func (t *Btree) ContainsAny(values []interface{}) bool {
 }
 
 // ContainsAll returns true if the tree contains all of the values
-func (t *Btree) ContainsAll(values []interface{}) bool {
+func (t *Btree) ContainsAll(values []Val) bool {
 	for _, v := range values {
 		if !t.Contains(v) {
 			return false
@@ -209,10 +140,10 @@ func (t *Btree) ContainsAll(values []interface{}) bool {
 }
 
 // Get returns the node value associated with the search value
-func (t *Btree) Get(value interface{}) interface{} {
+func (t *Btree) Get(value Val) Val {
 	var node *Node
 	if t.root != nil {
-		node = t.root.get(value, t.compare)
+		node = t.root.get(value)
 	}
 	if node != nil {
 		return node.Value
@@ -226,7 +157,7 @@ func (t *Btree) Len() int {
 }
 
 // Head returns the first value in the tree
-func (t *Btree) Head() interface{} {
+func (t *Btree) Head() Val {
 	if t.root == nil {
 		return nil
 	}
@@ -246,7 +177,7 @@ func (t *Btree) Head() interface{} {
 }
 
 // Tail returns the last value in the tree
-func (t *Btree) Tail() interface{} {
+func (t *Btree) Tail() Val {
 	if t.root == nil {
 		return nil
 	}
@@ -266,9 +197,9 @@ func (t *Btree) Tail() interface{} {
 }
 
 // Values returns a slice of all the values in tree in order
-func (t *Btree) Values() []interface{} {
+func (t *Btree) Values() []Val {
 	if t.values == nil {
-		t.values = make([]interface{}, t.len)
+		t.values = make([]Val, t.len)
 		t.Ascend(func(n *Node, i int) bool {
 			t.values[i] = n.Value
 			return true
@@ -278,9 +209,9 @@ func (t *Btree) Values() []interface{} {
 }
 
 // Delete deletes the node from the tree associated with the search value
-func (t *Btree) Delete(value interface{}) *Btree {
+func (t *Btree) Delete(value Val) *Btree {
 	deleted := false
-	t.root = deleteNode(t.root, value, &deleted, t.compare)
+	t.root = deleteNode(t.root, value, &deleted)
 	if deleted {
 		t.len--
 	}
@@ -289,24 +220,24 @@ func (t *Btree) Delete(value interface{}) *Btree {
 }
 
 // DeleteAll deletes the nodes from the tree associated with the search values
-func (t *Btree) DeleteAll(values []interface{}) *Btree {
+func (t *Btree) DeleteAll(values []Val) *Btree {
 	for _, v := range values {
 		t.Delete(v)
 	}
 	return t
 }
 
-func deleteNode(n *Node, value interface{}, deleted *bool, compare Comp) *Node {
+func deleteNode(n *Node, value Val, deleted *bool) *Node {
 	if n == nil {
 		return n
 	}
 
-	c := compare(value, n.Value)
+	c := value.Comp(n.Value)
 
 	if c < 0 {
-		n.left = deleteNode(n.left, value, deleted, compare)
+		n.left = deleteNode(n.left, value, deleted)
 	} else if c > 0 {
-		n.right = deleteNode(n.right, value, deleted, compare)
+		n.right = deleteNode(n.right, value, deleted)
 	} else {
 		if n.left == nil {
 			t := n.right
@@ -319,7 +250,7 @@ func deleteNode(n *Node, value interface{}, deleted *bool, compare Comp) *Node {
 		}
 		t := n.right.min()
 		n.Value = t.Value
-		n.right = deleteNode(n.right, t.Value, deleted, compare)
+		n.right = deleteNode(n.right, t.Value, deleted)
 		*deleted = true
 	}
 
@@ -347,7 +278,7 @@ func deleteNode(n *Node, value interface{}, deleted *bool, compare Comp) *Node {
 }
 
 // Pop deletes the last node from the tree and returns its value
-func (t *Btree) Pop() interface{} {
+func (t *Btree) Pop() Val {
 	value := t.Tail()
 	if value != nil {
 		t.Delete(value)
@@ -356,7 +287,7 @@ func (t *Btree) Pop() interface{} {
 }
 
 // Pull deletes the first node from the tree and returns its value
-func (t *Btree) Pull() interface{} {
+func (t *Btree) Pull() Val {
 	value := t.Head()
 	if value != nil {
 		t.Delete(value)
@@ -447,16 +378,16 @@ func balance(n *Node) int8 {
 	return height(n.left) - height(n.right)
 }
 
-func (n *Node) get(val interface{}, compare Comp) *Node {
+func (n *Node) get(val Val) *Node {
 	var node *Node
-	c := compare(val, n.Value)
+	c := val.Comp(n.Value)
 	if c < 0 {
 		if n.left != nil {
-			node = n.left.get(val, compare)
+			node = n.left.get(val)
 		}
 	} else if c > 0 {
 		if n.right != nil {
-			node = n.right.get(val, compare)
+			node = n.right.get(val)
 		}
 	} else {
 		node = n
@@ -523,211 +454,122 @@ func (n *Node) maxHeight() int8 {
 	return lh
 }
 
-func intComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(int), v2.(int)
-	if t1 > t2 {
+// IntVal represents an integer tree val
+type IntVal int
+
+// Comp defines the compare method for int values
+func (i IntVal) Comp(val Val) int8 {
+	v := val.(IntVal)
+	if i > v {
 		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func stringComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(string), v2.(string)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func uintComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(uint), v2.(uint)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func float32Comp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(float32), v2.(float32)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func float64Comp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(float64), v2.(float64)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func uintptrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(uintptr), v2.(uintptr)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func byteComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(byte), v2.(byte)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func runeComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(rune), v2.(rune)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func complex64Comp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(float64), v2.(float64)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func complex128Comp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(float64), v2.(float64)
-	if t1 > t2 {
-		return 1
-	} else if t1 < t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func stringPtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*string), v2.(*string)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func intPtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*int), v2.(*int)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func uintPtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*uint), v2.(*uint)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func bytePtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*byte), v2.(*byte)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func runePtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*rune), v2.(*rune)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func float32PtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*float32), v2.(*float32)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func float64PtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*float64), v2.(*float64)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func complex32PtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*float64), v2.(*float64)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
-		return -1
-	} else {
-		return 0
-	}
-}
-func complex64PtrComp(v1, v2 interface{}) int8 {
-	t1, t2 := v1.(*float64), v2.(*float64)
-	if *t1 > *t2 {
-		return 1
-	} else if *t1 < *t2 {
+	} else if i < v {
 		return -1
 	} else {
 		return 0
 	}
 }
 
-func comp(v1, v2 interface{}) int8 {
-	var c int8
-	switch v1.(type) {
-	case CompareTo:
-		c = v1.(CompareTo).Comp(v2)
-	case fmt.Stringer:
-		s1, s2 := v1.(fmt.Stringer).String(), v2.(fmt.Stringer).String()
-		if s1 > s2 {
-			c = 1
-		} else if s1 < s2 {
-			c = -1
-		} else {
-			c = 0
-		}
+// StringVal represents an string tree val
+type StringVal string
+
+// Comp defines the compare method for string values
+func (i StringVal) Comp(val Val) int8 {
+	v := val.(StringVal)
+	if i > v {
+		return 1
+	} else if i < v {
+		return -1
+	} else {
+		return 0
 	}
-	return c
+}
+
+// UintVal represents an uint tree val
+type UintVal uint
+
+// Comp defines the compare method for uint values
+func (i UintVal) Comp(val Val) int8 {
+	v := val.(UintVal)
+	if i > v {
+		return 1
+	} else if i < v {
+		return -1
+	} else {
+		return 0
+	}
+}
+
+// Float32Val represents an float32 tree val
+type Float32Val float32
+
+// Comp defines the compare method for float32 values
+func (i Float32Val) Comp(val Val) int8 {
+	v := val.(Float32Val)
+	if i > v {
+		return 1
+	} else if i < v {
+		return -1
+	} else {
+		return 0
+	}
+}
+
+// Float64Val represents an float64 tree val
+type Float64Val float64
+
+// Comp defines the compare method for float64 values
+func (i Float64Val) Comp(val Val) int8 {
+	v := val.(Float64Val)
+	if i > v {
+		return 1
+	} else if i < v {
+		return -1
+	} else {
+		return 0
+	}
+}
+
+// UintptrVal represents a uintptr tree val
+type UintptrVal uintptr
+
+// Comp defines the compare method for uintptr values
+func (i UintptrVal) Comp(val Val) int8 {
+	v := val.(UintptrVal)
+	if i > v {
+		return 1
+	} else if i < v {
+		return -1
+	} else {
+		return 0
+	}
+}
+
+// RuneVal represents a rune tree val
+type RuneVal rune
+
+// Comp defines the compare method for rune values
+func (i RuneVal) Comp(val Val) int8 {
+	v := val.(RuneVal)
+	if i > v {
+		return 1
+	} else if i < v {
+		return -1
+	} else {
+		return 0
+	}
+}
+
+// ByteVal represents a byte tree val
+type ByteVal byte
+
+// Comp defines the compare method for byte values
+func (i ByteVal) Comp(val Val) int8 {
+	v := val.(ByteVal)
+	if i > v {
+		return 1
+	} else if i < v {
+		return -1
+	} else {
+		return 0
+	}
 }

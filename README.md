@@ -8,29 +8,27 @@
 ### AVL tree implementation
  * very fast insertion, look ups, and deletions
  * very fast iteration
- * user friendly library
- * handles custom value comparisons
  
 #### Basic Usage
 ```
 import (
-    "fmt"
-	"github.com/ross-oreto/go-tree"
+"fmt"
+"github.com/ross-oreto/go-tree"
 )
 
-btree := tree.NewString()
-btree.Insert('Oreto').Insert('Michael').Insert('Ross')
+btree := tree.New()
+btree.Insert(StringVal("Oreto")).Insert(StringVal("Michael")).Insert(StringVal("Ross"))
 fmt.Println(btree.Values())
 ```
 
 #### Retrieve
 ```
-btree.Get('Ross')
+btree.Get("Ross")
 ```
 
 #### Delete
 ```
-btree.Delete('Ross')
+btree.Delete("Ross")
 ```
 
 #### Clear
@@ -38,17 +36,17 @@ btree.Delete('Ross')
 btree.Init()
 ```
 
-#### Custom Values
-Custom structs can be inserted by implementing one of two interfaces
-1. tree.CompareTo Comp(val interface{}) int8
-2. fmt.Stringer String() string
-    Note: Use tree.New() when using these interfaces.
+#### Val type
+Values entered into the tree must implement the Val interface Comp method
+ - Comp(val Val) int8
+
 ```
 type TestKey1 struct {
 	Name string
 }
-func (testkey TestKey1) Comp(val interface{}) int8 {
-	var c int8 = 0
+
+func (testkey TestKey1) Comp(val Val) int8 {
+	var c int8
 	tk := val.(TestKey1)
 	if testkey.Name > tk.Name {
 		c = 1
@@ -57,42 +55,35 @@ func (testkey TestKey1) Comp(val interface{}) int8 {
 	}
 	return c
 }
-type TestKey2 struct {
-	Name string
-}
-func (testkey TestKey2) String() string {
-	return testkey.Name
-}
 ```
 
 #### Performance
 Benchmarks ran against "github.com/google/btree" using a random tree with 1 million inserts
 ```
-go test -v -benchmem -count 2 -bench .
-BenchmarkInsertBtree-4                 5         285713580 ns/op        17600009 B/op    1200000 allocs/op
-BenchmarkInsertBtree-4                 5         281322800 ns/op        17600006 B/op    1200000 allocs/op
-BenchmarkInsertGtree-4                 5         296885800 ns/op        18477032 B/op    1019763 allocs/op
-BenchmarkInsertGtree-4                 5         300083060 ns/op        18477016 B/op    1019763 allocs/op
-BenchmarkInsertRandomBtree-4           1        1166626900 ns/op        56000016 B/op    2000000 allocs/op
-BenchmarkInsertRandomBtree-4           1        1161119600 ns/op        56000016 B/op    2000000 allocs/op
-BenchmarkInsertRandomGtree-4           2         916495450 ns/op        26159948 B/op    1034830 allocs/op
-BenchmarkInsertRandomGtree-4           2         913124250 ns/op        26159948 B/op    1034830 allocs/op
-BenchmarkGetBtree-4                    2         863909650 ns/op         8000000 B/op    1000000 allocs/op
-BenchmarkGetBtree-4                    2         866082800 ns/op         8000000 B/op    1000000 allocs/op
-BenchmarkGetGtree-4                    2         907872500 ns/op         8000000 B/op    1000000 allocs/op
-BenchmarkGetGtree-4                    2         929887650 ns/op         8000000 B/op    1000000 allocs/op
-BenchmarkIterationBtree-4           5000            366049 ns/op               0 B/op          0 allocs/op
-BenchmarkIterationBtree-4           5000            361945 ns/op               0 B/op          0 allocs/op
-BenchmarkIterationGtree-4            200           8755904 ns/op               0 B/op          0 allocs/op
-BenchmarkIterationGtree-4            200           8674274 ns/op               0 B/op          0 allocs/op
-BenchmarkLenBtree-4             2000000000               0.42 ns/op            0 B/op          0 allocs/op
-BenchmarkLenBtree-4             2000000000               0.43 ns/op            0 B/op          0 allocs/op
-BenchmarkLenGtree-4             2000000000               0.44 ns/op            0 B/op          0 allocs/op
-BenchmarkLenGtree-4             2000000000               0.43 ns/op            0 B/op          0 allocs/op
-BenchmarkDeleteBtree-4               200           8800903 ns/op         1600048 B/op     200001 allocs/op
-BenchmarkDeleteBtree-4               200           8828686 ns/op         1600048 B/op     200001 allocs/op
-BenchmarkDeleteGtree-4                20          96146990 ns/op         5232844 B/op     206896 allocs/op
-BenchmarkDeleteGtree-4                20          95363905 ns/op         5232846 B/op     206896 allocs/op
+BenchmarkBtree_Insert-4                        3         357906766 ns/op        24000016 B/op    1333333 allocs/op
+BenchmarkBtree_Insert-4                        3         356572333 ns/op        24000016 B/op    1333333 allocs/op
+BenchmarkGtree_Insert-4                        3         364911600 ns/op        25461704 B/op    1032939 allocs/op
+BenchmarkGtree_Insert-4                        3         366578900 ns/op        25461698 B/op    1032939 allocs/op
+BenchmarkBtree_InsertRandom-4                  1        1354908200 ns/op        56000032 B/op    2000000 allocs/op
+BenchmarkBtree_InsertRandom-4                  1        1351906700 ns/op        56000000 B/op    2000000 allocs/op
+BenchmarkGtree_InsertRandom-4                  1        1049704500 ns/op        44105176 B/op    1068918 allocs/op
+BenchmarkGtree_InsertRandom-4                  1        1070716500 ns/op        44105176 B/op    1068918 allocs/op
+BenchmarkBtree_Get-4                           2         984660150 ns/op         8000000 B/op    1000000 allocs/op
+BenchmarkBtree_Get-4                           2         969647750 ns/op         8000000 B/op    1000000 allocs/op
+BenchmarkGtree_Get-4                           1        1065713900 ns/op         8000000 B/op    1000000 allocs/op
+BenchmarkGtree_Get-4                           1        1064712600 ns/op         8000000 B/op    1000000 allocs/op
+BenchmarkBtree_Iteration-4                  2000            591395 ns/op               0 B/op          0 allocs/op
+BenchmarkBtree_Iteration-4                  2000            590395 ns/op               0 B/op          0 allocs/op
+BenchmarkGtree_Iteration-4                   100          10356963 ns/op               0 B/op          0 allocs/op
+BenchmarkGtree_Iteration-4                   100          10346943 ns/op               0 B/op          0 allocs/op
+BenchmarkBtree_Len-4                    2000000000               0.59 ns/op            0 B/op          0 allocs/op
+BenchmarkBtree_Len-4                    2000000000               0.59 ns/op            0 B/op          0 allocs/op
+BenchmarkGtree_Len-4                    2000000000               0.59 ns/op            0 B/op          0 allocs/op
+BenchmarkGtree_Len-4                    2000000000               0.59 ns/op            0 B/op          0 allocs/op
+BenchmarkBtree_Delete-4                       10         122482200 ns/op         6400001 B/op     300000 allocs/op
+BenchmarkBtree_Delete-4                       10         121581680 ns/op         6400001 B/op     300000 allocs/op
+BenchmarkGtree_Delete-4                       10         115377360 ns/op         5217883 B/op     206879 allocs/op
+BenchmarkGtree_Delete-4                       10         113776200 ns/op         5217884 B/op     206879 allocs/op
 ```
 
  - btree = go-tree
@@ -103,6 +94,6 @@ Results show:
  * Gets are faster using btree
  * Iteration much faster with btree
  * Length reporting at the same speed
- * tree deletions are faster using btree
- * A larger memory footprint using btree during insertions
+ * tree deletions are slightly faster using gtree
+ * A larger memory footprint using btree during insertions and deletions
 
