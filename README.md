@@ -23,12 +23,12 @@ fmt.Println(btree.Values())
 
 #### Retrieve
 ```
-btree.Get("Ross")
+btree.Get(StringVal("Ross"))
 ```
 
 #### Delete
 ```
-btree.Delete("Ross")
+btree.Delete(StringVal("Ross"))
 ```
 
 #### Clear

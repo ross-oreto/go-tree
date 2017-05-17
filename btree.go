@@ -23,10 +23,10 @@ type Node struct {
 	height      int8
 }
 
-// New returns a new btree which expects types that implement the Val or Stringer Interfaces
+// New returns a new btree
 func New() *Btree { return new(Btree).Init() }
 
-// Init initializes all values/clears the tree using the default compare method and returns the tree pointer
+// Init initializes all values/clears the tree and returns the tree pointer
 func (t *Btree) Init() *Btree {
 	t.root = nil
 	t.values = nil
